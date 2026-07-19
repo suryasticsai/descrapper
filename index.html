@@ -301,24 +301,6 @@
             50% { opacity: 0.5; }
         }
         
-        /* ─────────────────── FULL DESCRIPTION ─────────────────── */
-        .full-description {
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border-left: 4px solid #10b981;
-            margin-top: 1rem;
-            white-space: pre-wrap;
-            font-size: 0.9rem;
-            line-height: 1.7;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .full-description h3 {
-            color: #065f46;
-            margin-bottom: 0.5rem;
-        }
-        
         /* ─────────────────── TABS ─────────────────── */
         .tabs {
             display: flex;
@@ -481,6 +463,18 @@
         </div>
         
         <div class="main-grid">
+            <!-- LEFT PANEL: Sections (was Page Preview) -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>🧩 Job Description Sections</span>
+                    <span class="badge" id="dataSource">waiting</span>
+                </div>
+                <div class="panel-body" id="tilesContainer">
+                    <div class="empty-state">No content yet. Scrape a job to see intelligent tiles.</div>
+                </div>
+            </div>
+            
+            <!-- RIGHT PANEL: Page Preview (was Sections) -->
             <div class="panel">
                 <div class="panel-header">
                     <span>📄 Page Preview</span>
@@ -489,36 +483,6 @@
                 <div class="panel-body" id="viewerContainer">
                     <div style="height:100%;min-height:550px;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#94a3b8;font-style:italic;border-radius:8px;">
                         Enter a URL and click Scrape
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel">
-                <div class="panel-header">
-                    <span>📊 Job Description</span>
-                    <span class="badge" id="dataSource">waiting</span>
-                </div>
-                <div class="panel-body">
-                    <div class="tabs">
-                        <button class="active" data-tab="tiles">🧩 Smart Tiles</button>
-                        <button data-tab="full">📄 Full Description</button>
-                        <button data-tab="json">📄 JSON</button>
-                    </div>
-                    
-                    <div id="tabTiles" class="tab-content active">
-                        <div id="tilesContainer">
-                            <div class="empty-state">No content yet. Scrape a job to see intelligent tiles.</div>
-                        </div>
-                    </div>
-                    
-                    <div id="tabFull" class="tab-content">
-                        <div id="fullContainer">
-                            <div class="empty-state">No content yet.</div>
-                        </div>
-                    </div>
-                    
-                    <div id="tabJson" class="tab-content">
-                        <pre id="jsonOutput" style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;font-size:0.8rem;overflow:auto;max-height:500px;white-space:pre-wrap;word-wrap:break-word;margin:0;">{"message":"Waiting for data..."}</pre>
                     </div>
                 </div>
             </div>
@@ -552,9 +516,7 @@
             const fetchBtn = document.getElementById('fetchBtn');
             const statusBadge = document.getElementById('statusBadge');
             const viewerContainer = document.getElementById('viewerContainer');
-            const jsonOutput = document.getElementById('jsonOutput');
             const tilesContainer = document.getElementById('tilesContainer');
-            const fullContainer = document.getElementById('fullContainer');
             const dataSource = document.getElementById('dataSource');
             const jobTitle = document.getElementById('jobTitle');
             const jobCompany = document.getElementById('jobCompany');
@@ -576,7 +538,6 @@
             let currentSections = [];
             let currentHtml = '';
             let currentUrl = '';
-            let raginaEngine = null;
             
             // ── Console functions ──
             let logEntries = [];
@@ -631,17 +592,6 @@
                 consoleBody.style.display = consoleOpen ? 'block' : 'none';
             });
             
-            // ── Tabs ──
-            document.querySelectorAll('.tabs button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    const target = this.dataset.tab;
-                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                    document.getElementById('tab' + target.charAt(0).toUpperCase() + target.slice(1)).classList.add('active');
-                });
-            });
-            
             // ── Toast ──
             function showToast(title, message, type = 'success') {
                 toastTitle.textContent = title;
@@ -664,12 +614,9 @@
                 try {
                     // Use RAGina's askLLM if available
                     if (window.RAGina && window.RAGina.engine && window.RAGina.engine.isReady) {
-                        // Build index with context
                         const engine = window.RAGina.engine;
                         const data = { 'job_description': { bodyText: context } };
                         engine.buildIndex(data, 200);
-                        
-                        // Now ask
                         const result = await window.RAGina.askLLM(prompt, 'openai');
                         return result;
                     }
@@ -964,8 +911,6 @@
                         
                         // Update the display
                         renderTiles(currentSections);
-                        renderFullDescription(currentSections);
-                        jsonOutput.textContent = JSON.stringify({ sections: currentSections }, null, 2);
                         
                         addLog(`✅ Section regenerated: ${section.heading}`, 'success');
                         showToast('Regenerated!', `Section "${section.heading}" has been updated.`, 'success');
@@ -1024,24 +969,6 @@
                 
                 // Store full content for expand
                 window._sectionContents = sections.map(s => s.content);
-            }
-            
-            // ─── Render Full Description ──────────────────────────────────
-            
-            function renderFullDescription(sections) {
-                if (!sections || sections.length === 0) {
-                    fullContainer.innerHTML = '<div class="empty-state">No content yet.</div>';
-                    return;
-                }
-                
-                let html = '<div class="full-description">';
-                for (const section of sections) {
-                    const type = getSectionType(section.heading + ' ' + section.content);
-                    html += `<h3>${type}${section.heading && !section.heading.includes('Content') ? ` — ${escapeHtml(section.heading)}` : ''}</h3>`;
-                    html += `<p>${escapeHtml(section.content)}</p><br>`;
-                }
-                html += '</div>';
-                fullContainer.innerHTML = html;
             }
             
             // ─── Global Functions for Tiles ──────────────────────────────
@@ -1119,7 +1046,7 @@
                     
                     currentHtml = html;
                     
-                    // Show preview
+                    // Show preview in right panel
                     viewerContainer.innerHTML = `<iframe srcdoc="${escapeHtml(html).replace(/"/g, '&quot;')}" style="width:100%;height:100%;min-height:550px;border:none;border-radius:8px;background:#fff;"></iframe>`;
                     
                     if (isJobClosed(html)) {
@@ -1144,7 +1071,6 @@
                     if (sections.length === 0) {
                         addLog('⚠️ No sections found.', 'warn');
                         tilesContainer.innerHTML = `<div class="empty-state">No content sections found.</div>`;
-                        fullContainer.innerHTML = `<div class="empty-state">No content found.</div>`;
                         fetchBtn.disabled = false;
                         return;
                     }
@@ -1154,8 +1080,6 @@
                     dataSource.textContent = `${sections.length} sections`;
                     
                     renderTiles(sections);
-                    renderFullDescription(sections);
-                    jsonOutput.textContent = JSON.stringify({ url, jobInfo, sections }, null, 2);
                     
                     // Initialize RAGina with the context
                     if (window.RAGina) {
@@ -1173,7 +1097,6 @@
                     addLog(`❌ Error: ${error.message}`, 'error');
                     setStatus('Error', 'error');
                     showToast('Error', error.message, 'error');
-                    jsonOutput.textContent = JSON.stringify({ error: error.message }, null, 2);
                 } finally {
                     fetchBtn.disabled = false;
                 }
