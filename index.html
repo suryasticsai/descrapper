@@ -43,6 +43,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
         header h1 span {
             background: rgba(255,255,255,0.1);
@@ -155,7 +156,7 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
         }
         .category-card .category-header {
-            padding: 1rem 1.2rem;
+            padding: 0.8rem 1.2rem;
             background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
@@ -163,15 +164,15 @@
             align-items: center;
         }
         .category-card .category-header .category-icon {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
         .category-card .category-header .category-title {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #1a1a2e;
         }
         .category-card .category-header .category-count {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: #dbeafe;
             color: #4a6cf7;
             padding: 0.1rem 0.6rem;
@@ -179,8 +180,8 @@
             font-weight: 600;
         }
         .category-card .category-body {
-            padding: 1rem 1.2rem;
-            max-height: 400px;
+            padding: 0.8rem 1.2rem;
+            max-height: 450px;
             overflow-y: auto;
         }
         
@@ -188,8 +189,8 @@
         .section-item {
             background: #f8fafc;
             border-radius: 8px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.8rem;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.7rem;
             border-left: 3px solid #4a6cf7;
             transition: all 0.2s ease;
         }
@@ -197,13 +198,13 @@
             background: #eff6ff;
         }
         .section-item .section-heading {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: #1a1a2e;
             margin-bottom: 0.2rem;
         }
         .section-item .section-content {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #4a4a6a;
             line-height: 1.5;
             max-height: 60px;
@@ -230,15 +231,15 @@
         }
         .section-item .section-actions {
             display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
             flex-wrap: wrap;
         }
         .section-item .section-actions button {
             padding: 0.15rem 0.6rem;
             border: none;
             border-radius: 4px;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -262,10 +263,15 @@
             color: white;
         }
         .section-item .section-actions .btn-copy:hover { background: #059669; }
+        .section-item .section-actions .btn-tailor {
+            background: #8b5cf6;
+            color: white;
+        }
+        .section-item .section-actions .btn-tailor:hover { background: #7c3aed; }
         
         .section-item .regenerate-indicator {
             display: none;
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: #4a6cf7;
             margin-top: 0.3rem;
             animation: pulse 1s infinite;
@@ -276,6 +282,82 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
+        }
+        
+        /* ─────────────────── SUGGESTIONS PANEL ─────────────────── */
+        .suggestions-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-top: 2rem;
+            overflow: hidden;
+            border-top: 4px solid #8b5cf6;
+        }
+        .suggestions-panel .suggestions-header {
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .suggestions-panel .suggestions-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .suggestions-panel .suggestions-body {
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .suggestions-panel .suggestion-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid #8b5cf6;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .suggestions-panel .suggestion-item .suggestion-text {
+            flex: 1;
+            font-size: 0.85rem;
+            color: #1a1a2e;
+            line-height: 1.5;
+        }
+        .suggestions-panel .suggestion-item .suggestion-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+        .suggestions-panel .suggestion-item .suggestion-actions button {
+            padding: 0.2rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .suggestions-panel .suggestion-item .suggestion-actions .btn-apply {
+            background: #10b981;
+            color: white;
+        }
+        .suggestions-panel .suggestion-item .suggestion-actions .btn-apply:hover { background: #059669; }
+        .suggestions-panel .suggestion-item .suggestion-actions .btn-copy-suggestion {
+            background: #4a6cf7;
+            color: white;
+        }
+        .suggestions-panel .suggestion-item .suggestion-actions .btn-copy-suggestion:hover { background: #3a56d4; }
+        
+        .suggestions-panel .suggestions-loading {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
         }
         
         /* ─────────────────── CONSOLE ─────────────────── */
@@ -393,13 +475,15 @@
         .btn-success:hover { background: #059669; }
         .btn-danger { background: #ef4444; color: white; }
         .btn-danger:hover { background: #dc2626; }
+        .btn-purple { background: #8b5cf6; color: white; }
+        .btn-purple:hover { background: #7c3aed; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🎯 JobScraper Pro <span>AI-Powered</span></h1>
-            <p>Intelligently extracts job description sections with RAGina AI – refetch and regenerate any section</p>
+            <p>Extract job sections with AI-powered suggestions for resume tailoring</p>
         </header>
         
         <div class="input-section">
@@ -419,6 +503,17 @@
         <!-- Category Grid -->
         <div id="categoryGrid" class="category-grid">
             <div class="empty-state" style="grid-column:1/-1;">No content yet. Scrape a job to see sections organized by category.</div>
+        </div>
+        
+        <!-- Suggestions Panel -->
+        <div class="suggestions-panel" id="suggestionsPanel" style="display:none;">
+            <div class="suggestions-header">
+                <h3>💡 Resume Tailoring Suggestions</h3>
+                <button class="btn-secondary" style="padding:0.3rem 1rem;font-size:0.8rem;" onclick="generateTailoringSuggestions()">🔄 Generate Suggestions</button>
+            </div>
+            <div class="suggestions-body" id="suggestionsBody">
+                <div class="suggestions-loading">Click "Generate Suggestions" to get AI-powered resume tailoring tips.</div>
+            </div>
         </div>
         
         <div class="console">
@@ -449,6 +544,8 @@
             const fetchBtn = document.getElementById('fetchBtn');
             const statusBadge = document.getElementById('statusBadge');
             const categoryGrid = document.getElementById('categoryGrid');
+            const suggestionsPanel = document.getElementById('suggestionsPanel');
+            const suggestionsBody = document.getElementById('suggestionsBody');
             const jobTitle = document.getElementById('jobTitle');
             const jobCompany = document.getElementById('jobCompany');
             const jobStatus = document.getElementById('jobStatus');
@@ -469,6 +566,7 @@
             let currentSections = [];
             let currentHtml = '';
             let currentUrl = '';
+            let currentSuggestions = [];
             
             // ── Console functions ──
             let logEntries = [];
@@ -568,9 +666,9 @@
             // ─── Section Categories and Types ──────────────────────────────────
             
             const CATEGORIES = {
-                '📋 Job Overview': {
+                '📋 About the Role': {
                     icon: '📋',
-                    types: ['Job Description', 'Role Overview', 'Position Summary', 'About the Role'],
+                    types: ['About the Role', 'Role Overview', 'Position Summary', 'Job Description'],
                     color: '#4a6cf7'
                 },
                 '📌 Responsibilities': {
@@ -580,43 +678,58 @@
                 },
                 '📋 Requirements': {
                     icon: '📋',
-                    types: ['Requirements', 'Qualifications', 'What You\'ll Bring', 'Must Have', 'Nice to Have', 'Basic Qualifications', 'Minimum Qualifications', 'Preferred Qualifications'],
+                    types: ['Requirements', 'Qualifications', 'What You\'ll Bring', 'Must Have', 'Nice to Have', 'Basic Qualifications'],
                     color: '#ef4444'
                 },
-                '👤 About You': {
-                    icon: '👤',
-                    types: ['About You', 'Who You Are', 'Your Profile', 'Ideal Candidate', 'We Are Looking For'],
-                    color: '#8b5cf6'
+                '💼 Experience': {
+                    icon: '💼',
+                    types: ['Experience', 'Years of Experience', 'Professional Experience', 'Work Experience'],
+                    color: '#f97316'
+                },
+                '🛠️ Skillsets': {
+                    icon: '🛠️',
+                    types: ['Skills', 'Technical Skills', 'Core Skills', 'Soft Skills', 'Competencies'],
+                    color: '#06b6d4'
                 },
                 '🎓 Education': {
                     icon: '🎓',
-                    types: ['Education', 'Degree', 'Certification', 'Academic Requirements'],
-                    color: '#06b6d4'
+                    types: ['Education', 'Degree', 'Academic Requirements', 'Field of Study'],
+                    color: '#8b5cf6'
                 },
-                '💰 Benefits & Pay': {
+                '📜 Certifications': {
+                    icon: '📜',
+                    types: ['Certifications', 'Certificates', 'Licenses', 'Professional Certifications'],
+                    color: '#ec4899'
+                },
+                '👤 About You': {
+                    icon: '👤',
+                    types: ['About You', 'Who You Are', 'Your Profile', 'Ideal Candidate'],
+                    color: '#8b5cf6'
+                },
+                '💰 Pay & Benefits': {
                     icon: '💰',
-                    types: ['Benefits', 'Perks', 'Compensation', 'Salary', 'Pay Range', 'Total Rewards', 'What We Offer'],
+                    types: ['Pay', 'Salary', 'Compensation', 'Benefits', 'Perks', 'Total Rewards'],
                     color: '#10b981'
                 },
                 '📍 Location': {
                     icon: '📍',
-                    types: ['Location', 'Remote', 'Hybrid', 'Office', 'Work From', 'Telecommute'],
+                    types: ['Location', 'Remote', 'Hybrid', 'Office', 'Work From'],
                     color: '#3b82f6'
+                },
+                '📈 Additional Preferences': {
+                    icon: '📈',
+                    types: ['Additional Preferences', 'Nice to Have', 'Preferred Qualifications', 'Bonus Points'],
+                    color: '#14b8a6'
                 },
                 '🏢 Company': {
                     icon: '🏢',
-                    types: ['About Company', 'Who We Are', 'Our Culture', 'Our Values', 'Why Join Us'],
+                    types: ['About Company', 'Who We Are', 'Our Culture', 'Our Values'],
                     color: '#6366f1'
                 },
                 '👥 Team': {
                     icon: '👥',
-                    types: ['About the Team', 'Our Team', 'Team Culture', 'Who You\'ll Work With'],
+                    types: ['About the Team', 'Our Team', 'Team Culture'],
                     color: '#ec4899'
-                },
-                '📈 Career Growth': {
-                    icon: '📈',
-                    types: ['Career Growth', 'Development', 'Learning', 'Growth Opportunities', 'Career Progression'],
-                    color: '#14b8a6'
                 }
             };
             
@@ -896,11 +1009,155 @@
                 }
             }
             
+            // ─── Generate Tailoring Suggestions ──────────────────────────────────
+            
+            async function generateTailoringSuggestions() {
+                if (currentSections.length === 0) {
+                    showToast('No Data', 'Please scrape a job first.', 'error');
+                    return;
+                }
+                
+                suggestionsBody.innerHTML = '<div class="suggestions-loading">🤔 AI is analyzing the job description...</div>';
+                suggestionsPanel.style.display = 'block';
+                
+                addLog('💡 Generating resume tailoring suggestions...', 'info');
+                
+                try {
+                    const context = currentSections.map(s => `${s.heading}: ${s.content}`).join('\n\n');
+                    
+                    const prompt = `
+                        You are an expert resume coach and career advisor.
+                        
+                        Based on the following job description, provide 6-8 specific, actionable tips for tailoring a resume to this role.
+                        
+                        Focus on:
+                        1. Keywords to include
+                        2. Skills to highlight
+                        3. Experience to emphasize
+                        4. Achievements to showcase
+                        5. Formatting or structure suggestions
+                        6. Any specific requirements to address
+                        
+                        Format each tip as a clear, concise, actionable suggestion.
+                        Number them 1-8.
+                        
+                        Job Description:
+                        ${context}
+                        
+                        Provide your tips:
+                    `;
+                    
+                    const result = await callRAGina(prompt, context);
+                    
+                    if (result && result.length > 50) {
+                        // Parse the tips
+                        const tips = result.split(/\d+\.\s*/).filter(t => t.trim().length > 10);
+                        currentSuggestions = tips.map(t => t.trim());
+                        renderSuggestions(currentSuggestions);
+                        addLog(`✅ Generated ${currentSuggestions.length} tailoring suggestions`, 'success');
+                        showToast('Suggestions Ready!', 'AI-generated resume tailoring tips are ready.', 'success');
+                    } else {
+                        throw new Error('No suggestions generated');
+                    }
+                    
+                } catch (error) {
+                    addLog(`❌ Failed to generate suggestions: ${error.message}`, 'error');
+                    suggestionsBody.innerHTML = `
+                        <div class="suggestions-loading" style="color:#ef4444;">
+                            ❌ Failed to generate suggestions. Please try again.
+                            <br><br>
+                            <button class="btn-primary" style="padding:0.5rem 1.5rem;margin-top:0.5rem;" onclick="generateTailoringSuggestions()">🔄 Retry</button>
+                        </div>
+                    `;
+                }
+            }
+            
+            // ─── Render Suggestions ──────────────────────────────────────────────
+            
+            function renderSuggestions(suggestions) {
+                if (!suggestions || suggestions.length === 0) {
+                    suggestionsBody.innerHTML = '<div class="suggestions-loading">No suggestions generated.</div>';
+                    return;
+                }
+                
+                let html = '';
+                for (let i = 0; i < suggestions.length; i++) {
+                    const suggestion = suggestions[i];
+                    html += `
+                        <div class="suggestion-item">
+                            <div class="suggestion-text">
+                                <strong>#${i + 1}</strong> ${escapeHtml(suggestion)}
+                            </div>
+                            <div class="suggestion-actions">
+                                <button class="btn-copy-suggestion" onclick="copySuggestion(${i})">📄 Copy</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                suggestionsBody.innerHTML = html;
+            }
+            
+            // ─── Global Functions ──────────────────────────────────────────────
+            
+            window.copySuggestion = function(index) {
+                const text = currentSuggestions[index] || '';
+                if (!text) return;
+                navigator.clipboard?.writeText(text).then(() => {
+                    showToast('Copied!', 'Suggestion copied to clipboard.');
+                }).catch(() => {
+                    const area = document.createElement('textarea');
+                    area.value = text;
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand('copy');
+                    area.remove();
+                    showToast('Copied!', 'Suggestion copied to clipboard.');
+                });
+            };
+            
+            window.toggleSectionExpand = function(id) {
+                const el = document.getElementById('section-content-' + id);
+                const btn = el.closest('.section-item').querySelector('.btn-expand');
+                if (el.classList.contains('expanded')) {
+                    el.classList.remove('expanded');
+                    const content = window._sectionContents[id] || '';
+                    el.textContent = escapeHtml(content.slice(0, 200)) + (content.length > 200 ? '...' : '');
+                    btn.textContent = 'Show More';
+                } else {
+                    el.classList.add('expanded');
+                    el.textContent = escapeHtml(window._sectionContents[id] || '');
+                    btn.textContent = 'Show Less';
+                }
+            };
+            
+            window.copySectionContent = function(id) {
+                const content = window._sectionContents[id] || '';
+                if (!content) return;
+                navigator.clipboard?.writeText(content).then(() => {
+                    showToast('Copied!', 'Section content copied to clipboard.');
+                }).catch(() => {
+                    const area = document.createElement('textarea');
+                    area.value = content;
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand('copy');
+                    area.remove();
+                    showToast('Copied!', 'Section content copied to clipboard.');
+                });
+            };
+            
+            window.regenerateSection = function(id) {
+                regenerateSection(id);
+            };
+            
+            window.generateTailoringSuggestions = generateTailoringSuggestions;
+            
             // ─── Render Category Grid ──────────────────────────────────────────
             
             function renderCategoryGrid(sections) {
                 if (!sections || sections.length === 0) {
                     categoryGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No sections found.</div>`;
+                    suggestionsPanel.style.display = 'none';
                     return;
                 }
                 
@@ -971,43 +1228,11 @@
                 // Store full content for expand
                 window._sectionContents = sections.map(s => s.content);
                 window._sectionHeadings = sections.map(s => s.heading);
+                
+                // Show suggestions panel
+                suggestionsPanel.style.display = 'block';
+                suggestionsBody.innerHTML = '<div class="suggestions-loading">Click "Generate Suggestions" to get AI-powered resume tailoring tips.</div>';
             }
-            
-            // ─── Global Functions ──────────────────────────────────────────────
-            
-            window.toggleSectionExpand = function(id) {
-                const el = document.getElementById('section-content-' + id);
-                const btn = el.closest('.section-item').querySelector('.btn-expand');
-                if (el.classList.contains('expanded')) {
-                    el.classList.remove('expanded');
-                    const content = window._sectionContents[id] || '';
-                    el.textContent = escapeHtml(content.slice(0, 200)) + (content.length > 200 ? '...' : '');
-                    btn.textContent = 'Show More';
-                } else {
-                    el.classList.add('expanded');
-                    el.textContent = escapeHtml(window._sectionContents[id] || '');
-                    btn.textContent = 'Show Less';
-                }
-            };
-            
-            window.copySectionContent = function(id) {
-                const content = window._sectionContents[id] || '';
-                navigator.clipboard?.writeText(content).then(() => {
-                    showToast('Copied!', 'Section content copied to clipboard.');
-                }).catch(() => {
-                    const area = document.createElement('textarea');
-                    area.value = content;
-                    document.body.appendChild(area);
-                    area.select();
-                    document.execCommand('copy');
-                    area.remove();
-                    showToast('Copied!', 'Section content copied to clipboard.');
-                });
-            };
-            
-            window.regenerateSection = function(id) {
-                regenerateSection(id);
-            };
             
             // ─── Main Fetch Function ──────────────────────────────────────
             
@@ -1070,6 +1295,7 @@
                     if (sections.length === 0) {
                         addLog('⚠️ No sections found.', 'warn');
                         categoryGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No content sections found.</div>`;
+                        suggestionsPanel.style.display = 'none';
                         fetchBtn.disabled = false;
                         return;
                     }
@@ -1089,7 +1315,7 @@
                     
                     setStatus('Success', 'success');
                     addLog(`✅ Extracted ${sections.length} sections across multiple categories`, 'success');
-                    showToast('Success!', `Extracted ${sections.length} sections organized by category.`, 'success');
+                    showToast('Success!', `Extracted ${sections.length} sections. Click "Generate Suggestions" for resume tips.`, 'success');
                     
                 } catch (error) {
                     addLog(`❌ Error: ${error.message}`, 'error');
@@ -1110,7 +1336,8 @@
             // ─── Init Log ──────────────────────────────────────────────────────
             
             addLog('🔗 Enter any URL and click Scrape to extract job description sections.', 'info');
-            addLog('💡 Sections are organized by category: Job Overview, Responsibilities, Requirements, etc.', 'info');
+            addLog('💡 Sections are organized by category: About the Role, Responsibilities, Skillsets, etc.', 'info');
+            addLog('💡 Click "Generate Suggestions" for AI-powered resume tailoring tips.', 'info');
             
             if (typeof window.RAGina !== 'undefined') {
                 addLog('🧠 RAGina AI loaded and ready for section regeneration.', 'success');
