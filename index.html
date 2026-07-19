@@ -158,7 +158,7 @@
         .status-badge.error { background: #fee2e2; color: #991b1b; }
         .status-badge.closed { background: #fecaca; color: #991b1b; }
         
-        /* ─────────────────── BASIC JOB META (compact) ─────────────────── */
+        /* ─────────────────── BASIC JOB META ─────────────────── */
         .job-meta {
             display: flex;
             flex-wrap: wrap;
@@ -274,30 +274,6 @@
             color: white;
         }
         .section-card .section-actions .btn-copy:hover { background: #059669; }
-        .section-card .section-actions .btn-refetch {
-            background: #4a6cf7;
-            color: white;
-        }
-        .section-card .section-actions .btn-refetch:hover { background: #3a56d4; }
-        .section-card .section-actions .btn-refetch:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .section-card .regenerate-indicator {
-            display: none;
-            font-size: 0.7rem;
-            color: #4a6cf7;
-            margin-top: 0.3rem;
-            animation: pulse 1s infinite;
-        }
-        .section-card .regenerate-indicator.active {
-            display: block;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
         
         .empty-state {
             color: #94a3b8;
@@ -572,8 +548,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🎯 JobScraper Pro <span>AI-Powered</span></h1>
-            <p>Extract every section of a job posting with AI</p>
+            <h1>🎯 JobScraper Pro <span>Regex-Powered</span></h1>
+            <p>Extract job sections using pattern matching – Experience, Skills, Responsibilities, Location & more</p>
         </header>
         
         <!-- Progress Bar -->
@@ -588,19 +564,19 @@
             <span class="status-badge" id="statusBadge">Ready</span>
         </div>
         
-        <!-- Job Meta (compact) -->
+        <!-- Job Meta -->
         <div class="job-meta" id="jobMeta" style="display:none;">
             <div class="meta-item"><span class="label">Job Title:</span><span class="value" id="metaTitle">-</span></div>
             <div class="meta-item"><span class="label">Company:</span><span class="value" id="metaCompany">-</span></div>
             <div class="meta-item"><span class="label">Status:</span><span class="value" id="metaStatus">-</span></div>
             <div class="meta-item"><span class="label">Job ID:</span><span class="value" id="metaJobId">-</span></div>
             <div class="meta-item"><span class="label">Posted:</span><span class="value" id="metaPosted">-</span></div>
-            <div class="meta-item"><span class="label">Deadline:</span><span class="value" id="metaDeadline">-</span></div>
+            <div class="meta-item"><span class="label">Location:</span><span class="value" id="metaLocation">-</span></div>
         </div>
         
         <!-- Sections Grid -->
         <div id="sectionsContainer" class="sections-grid">
-            <div class="empty-state">No content yet. Scrape a job to see all sections.</div>
+            <div class="empty-state">No content yet. Scrape a job to see extracted sections.</div>
         </div>
         
         <!-- Suggestions Panel -->
@@ -610,7 +586,7 @@
                 <button class="btn-secondary" style="padding:0.3rem 1rem;font-size:0.8rem;" onclick="generateTailoringSuggestions()">🔄 Generate Suggestions</button>
             </div>
             <div class="suggestions-body" id="suggestionsBody">
-                <div class="suggestions-loading">Click "Generate Suggestions" to get AI-powered resume tailoring tips.</div>
+                <div class="suggestions-loading">Click "Generate Suggestions" for AI-powered resume tailoring tips.</div>
             </div>
         </div>
         
@@ -667,7 +643,7 @@
             const metaStatus = document.getElementById('metaStatus');
             const metaJobId = document.getElementById('metaJobId');
             const metaPosted = document.getElementById('metaPosted');
-            const metaDeadline = document.getElementById('metaDeadline');
+            const metaLocation = document.getElementById('metaLocation');
             
             const consoleBody = document.getElementById('consoleBody');
             const logCount = document.getElementById('logCount');
@@ -684,7 +660,7 @@
             let toastTimeout = null;
             
             // ── State ──
-            let currentSections = {}; // { sectionKey: content }
+            let extractedSections = {};
             let currentSuggestions = [];
             
             // ── Console functions ──
@@ -772,7 +748,7 @@
                 }
             }
             
-            // ─── RAGina AI Functions ──────────────────────────────────────────
+            // ─── AI Functions (for suggestions) ──────────────────────────────
             
             async function callRAGina(prompt) {
                 try {
@@ -813,50 +789,78 @@
                 }
             }
             
-            // ─── Parse Job Posting with AI ──────────────────────────────────────
+            // ─── Regex-based Section Extraction ──────────────────────────────
             
-            async function parseJobPosting(text) {
-                const prompt = `
-You are a job posting parser. Given the following text from a job posting, extract the content into the following sections. Return a valid JSON object with these keys. If a section is not present, set its value to null.
-
-Sections:
-- jobTitle: the specific role name (e.g., "Senior Software Engineer")
-- companyIntro: a brief overview of the company, its mission, culture, and values (about 2-3 sentences)
-- jobSummary: a high-level summary of the role's purpose and impact (2-4 sentences)
-- responsibilities: a bulleted list or paragraph describing key responsibilities (use bullet points if possible)
-- requirements: qualifications, must-haves, nice-to-haves (use bullet points if possible)
-- benefits: compensation, perks, benefits offered (use bullet points if possible)
-- workEnvironment: location, remote/hybrid/onsite, travel, equipment provided
-- applicationInstructions: how to apply, deadline, what to include
-- deiStatement: diversity, equity, inclusion statement if present
-- legalCompliance: EEO, privacy, other legal disclaimers
-
-Important: Return ONLY the JSON object, no other text.
-
-Job posting text:
-${text.slice(0, 12000)}  // limit to avoid token issues
-`;
-                const result = await callRAGina(prompt);
-                // Try to parse JSON
-                let jsonMatch = result.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    try {
-                        return JSON.parse(jsonMatch[0]);
-                    } catch (e) {
-                        throw new Error('Failed to parse JSON from AI response');
+            function extractSectionsRegex(text) {
+                // Define section patterns with keywords and fallback
+                const sections = {
+                    'Job Title': { pattern: /(?:job title|title|role|position)\s*[:—\-]?\s*([^\n\.]{5,80})/i, icon: '📋' },
+                    'Company': { pattern: /(?:company|organization|hiring organization)\s*[:—\-]?\s*([^\n\.]{5,80})/i, icon: '🏢' },
+                    'Location': { pattern: /(?:location|city|country|office|address)\s*[:—\-]?\s*([^\n\.]{5,80})/i, icon: '📍' },
+                    'Job ID': { pattern: /(?:job id|requisition|req #|r-\d+)\s*[:—\-]?\s*([A-Za-z0-9\-_]{3,20})/i, icon: '🔢' },
+                    'Date Posted': { pattern: /(?:posted|date posted|published)\s*[:—\-]?\s*([\d\w\s,]+)/i, icon: '📅' },
+                    'Experience': { pattern: /(?:experience|years of experience|work experience)\s*[:—\-]?\s*([^\n]{10,500})/i, icon: '💼' },
+                    'Responsibilities': { pattern: /(?:responsibilities|what you['']ll do|key duties|job duties)\s*[:—\-]?\s*([^\n]{10,800})/i, icon: '📌' },
+                    'Skills': { pattern: /(?:skills|technical skills|competencies|qualifications|must have|nice to have)\s*[:—\-]?\s*([^\n]{10,800})/i, icon: '🛠️' },
+                    'Education': { pattern: /(?:education|degree|qualification|academic)\s*[:—\-]?\s*([^\n]{10,500})/i, icon: '🎓' },
+                    'Benefits': { pattern: /(?:benefits|perks|what we offer|compensation)\s*[:—\-]?\s*([^\n]{10,800})/i, icon: '💰' }
+                };
+                
+                // Also try to find sections by common section headers (e.g., "Experience:", "Skills:", etc.)
+                const result = {};
+                
+                // First, try to capture text after common headers that are on their own line or with colon
+                const headerRegex = /(?:^|\n)\s*(?:Experience|Skills|Responsibilities|Education|Benefits|Location|Job Title|Company)\s*[:—\-]?\s*\n?([\s\S]*?)(?=\n\s*(?:Experience|Skills|Responsibilities|Education|Benefits|Location|Job Title|Company|$))/gi;
+                let match;
+                while ((match = headerRegex.exec(text)) !== null) {
+                    const header = match[0].trim().replace(/[:—\-].*$/, '').trim();
+                    const content = match[1].trim();
+                    if (content && content.length > 10) {
+                        // Map to our keys
+                        const keyMap = {
+                            'Experience': 'Experience',
+                            'Skills': 'Skills',
+                            'Responsibilities': 'Responsibilities',
+                            'Education': 'Education',
+                            'Benefits': 'Benefits',
+                            'Location': 'Location',
+                            'Job Title': 'Job Title',
+                            'Company': 'Company'
+                        };
+                        const key = keyMap[header] || header;
+                        if (!result[key] || content.length > result[key].length) {
+                            result[key] = content;
+                        }
                     }
-                } else {
-                    throw new Error('AI did not return valid JSON');
                 }
+                
+                // If we didn't find all, use pattern fallback
+                for (const [key, config] of Object.entries(sections)) {
+                    if (!result[key]) {
+                        const match = text.match(config.pattern);
+                        if (match && match[1] && match[1].trim().length > 3) {
+                            result[key] = match[1].trim();
+                        }
+                    }
+                }
+                
+                // Also try to extract from JSON-LD if available (but we'll do that separately in meta)
+                // Clean up result: remove extra newlines, trim
+                for (const key in result) {
+                    result[key] = result[key].replace(/\s+/g, ' ').trim();
+                }
+                
+                return result;
             }
             
-            // ─── Extract Job Info (for meta) ──────────────────────────────────
+            // ─── Extract Job Info (meta) from HTML ──────────────────────────
             
             function extractJobInfo(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
-                let title = '', company = '', jobId = '', posted = '', deadline = '';
+                let title = '', company = '', jobId = '', posted = '', location = '';
                 
+                // Try JSON-LD
                 const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
                 for (let script of scripts) {
                     try {
@@ -871,55 +875,70 @@ ${text.slice(0, 12000)}  // limit to avoid token issues
                             }
                             jobId = json.identifier?.value || json.identifier || jobId;
                             posted = json.datePosted || posted;
-                            deadline = json.validThrough || json.applicationDeadline || deadline;
+                            if (json.jobLocation) {
+                                if (typeof json.jobLocation === 'string') {
+                                    location = json.jobLocation;
+                                } else if (json.jobLocation.address) {
+                                    const addr = json.jobLocation.address;
+                                    location = [addr.addressLocality, addr.addressRegion, addr.addressCountry]
+                                        .filter(Boolean).join(', ');
+                                }
+                            }
                             break;
                         }
                     } catch (e) { /* ignore */ }
                 }
                 
+                // Fallback to meta tags
                 if (!title) {
                     title = doc.querySelector('title')?.textContent?.trim() || '';
                     const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
                     if (ogTitle && ogTitle.length > title.length) title = ogTitle;
                 }
-                
                 if (!company) {
                     const ogSite = doc.querySelector('meta[property="og:site_name"]')?.getAttribute('content')?.trim() || '';
                     if (ogSite) company = ogSite;
                 }
+                if (!location) {
+                    const metaLoc = doc.querySelector('meta[name="location"]')?.getAttribute('content')?.trim() || '';
+                    if (metaLoc) location = metaLoc;
+                }
+                if (!posted) {
+                    const metaDate = doc.querySelector('meta[name="datePosted"]')?.getAttribute('content')?.trim() || '';
+                    if (metaDate) posted = metaDate;
+                }
                 
-                return { title, company, jobId, posted, deadline };
+                return { title, company, jobId, posted, location };
             }
             
             // ─── Render Sections ──────────────────────────────────────────────
             
             function renderSections(sections) {
-                // sections is an object with keys like jobTitle, companyIntro, etc.
-                // We'll filter out null/empty values.
-                const sectionMap = {
-                    jobTitle: { icon: '📋', label: 'Job Title' },
-                    companyIntro: { icon: '🏢', label: 'About the Company' },
-                    jobSummary: { icon: '📄', label: 'Job Summary' },
-                    responsibilities: { icon: '📌', label: 'Key Responsibilities' },
-                    requirements: { icon: '📋', label: 'Requirements & Qualifications' },
-                    benefits: { icon: '💰', label: 'Benefits & Perks' },
-                    workEnvironment: { icon: '📍', label: 'Work Environment' },
-                    applicationInstructions: { icon: '✉️', label: 'Application Instructions' },
-                    deiStatement: { icon: '🌍', label: 'Diversity, Equity & Inclusion' },
-                    legalCompliance: { icon: '⚖️', label: 'Legal & Compliance' }
+                // sections is an object with keys like 'Experience', 'Skills', etc.
+                const sectionIcons = {
+                    'Job Title': '📋',
+                    'Company': '🏢',
+                    'Location': '📍',
+                    'Job ID': '🔢',
+                    'Date Posted': '📅',
+                    'Experience': '💼',
+                    'Responsibilities': '📌',
+                    'Skills': '🛠️',
+                    'Education': '🎓',
+                    'Benefits': '💰'
                 };
                 
                 let html = '';
                 let hasContent = false;
-                for (const [key, info] of Object.entries(sectionMap)) {
-                    const content = sections[key];
-                    if (content && content.trim().length > 0) {
+                
+                // Filter out empty or too short sections
+                for (const [key, content] of Object.entries(sections)) {
+                    if (content && content.trim().length > 3) {
                         hasContent = true;
-                        const icon = info.icon;
-                        const label = info.label;
-                        // Format content: if it contains bullet points (•, -, etc.), wrap in ul
+                        const icon = sectionIcons[key] || '📄';
+                        // Format content: if it contains bullet points, wrap in ul
                         let formattedContent = escapeHtml(content);
-                        // Simple detection of bullet lists: lines starting with •, -, or * or numbers
+                        // Simple detection of bullet lists
                         const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                         let isBulletList = lines.some(l => /^[\s]*[•\-*]/.test(l) || /^\d+\./.test(l));
                         if (isBulletList) {
@@ -939,15 +958,13 @@ ${text.slice(0, 12000)}  // limit to avoid token issues
                             <div class="section-card" data-section="${key}">
                                 <div class="section-header">
                                     <span class="section-icon">${icon}</span>
-                                    <span class="section-title">${label}</span>
+                                    <span class="section-title">${key}</span>
                                 </div>
                                 <div class="section-body">
                                     ${formattedContent}
                                 </div>
                                 <div class="section-actions">
                                     <button class="btn-copy" onclick="copySectionContent('${key}')">📄 Copy</button>
-                                    <button class="btn-refetch" onclick="refetchSection('${key}')">🔄 Refetch</button>
-                                    <span class="regenerate-indicator" id="indicator-${key}">⏳ Regenerating...</span>
                                 </div>
                             </div>
                         `;
@@ -955,19 +972,19 @@ ${text.slice(0, 12000)}  // limit to avoid token issues
                 }
                 
                 if (!hasContent) {
-                    sectionsContainer.innerHTML = `<div class="empty-state">No sections could be extracted from this job posting.</div>`;
+                    sectionsContainer.innerHTML = `<div class="empty-state">No sections could be extracted from this job posting using regex.</div>`;
                 } else {
                     sectionsContainer.innerHTML = html;
                 }
                 
-                // Store current sections for refetch
-                window._currentSections = sections;
+                // Store for copy
+                window._extractedSections = sections;
             }
             
-            // ─── Global Functions for Section Actions ──────────────────────────
+            // ─── Global Functions for Copy ──────────────────────────────────
             
             window.copySectionContent = function(key) {
-                const content = window._currentSections && window._currentSections[key];
+                const content = window._extractedSections && window._extractedSections[key];
                 if (!content) return;
                 navigator.clipboard?.writeText(content).then(() => {
                     showToast('Copied!', `Section "${key}" copied to clipboard.`);
@@ -982,49 +999,10 @@ ${text.slice(0, 12000)}  // limit to avoid token issues
                 });
             };
             
-            window.refetchSection = async function(key) {
-                // We'll regenerate a single section by calling AI with a more specific prompt
-                const indicator = document.getElementById(`indicator-${key}`);
-                const btn = document.querySelector(`.section-card[data-section="${key}"] .btn-refetch`);
-                if (indicator) indicator.classList.add('active');
-                if (btn) btn.disabled = true;
-                
-                addLog(`🔄 Refetching section: ${key}`, 'info');
-                
-                try {
-                    // Get the entire context (all sections) and ask AI to regenerate this specific section
-                    const fullText = Object.values(window._currentSections).filter(v => v).join('\n\n');
-                    const prompt = `
-You are an expert job description writer. Based on the following job description context, regenerate the section titled "${key}".
-
-Context:
-${fullText}
-
-Please output ONLY the content for the "${key}" section. Do not include the section title or any extra text. Make it professional, detailed, and well-structured. If it's a list, use bullet points.
-`;
-                    const result = await callRAGina(prompt);
-                    if (result && result.trim().length > 10) {
-                        window._currentSections[key] = result.trim();
-                        // Re-render all sections (or just update that one)
-                        renderSections(window._currentSections);
-                        addLog(`✅ Section "${key}" regenerated`, 'success');
-                        showToast('Refreshed!', `Section "${key}" has been updated.`);
-                    } else {
-                        throw new Error('AI returned empty content');
-                    }
-                } catch (error) {
-                    addLog(`❌ Failed to regenerate section: ${error.message}`, 'error');
-                    showToast('Error', `Could not regenerate section: ${error.message}`, 'error');
-                } finally {
-                    if (indicator) indicator.classList.remove('active');
-                    if (btn) btn.disabled = false;
-                }
-            };
-            
-            // ─── Generate Tailoring Suggestions ──────────────────────────────────
+            // ─── Generate Tailoring Suggestions ──────────────────────────────
             
             async function generateTailoringSuggestions() {
-                if (!window._currentSections || Object.keys(window._currentSections).length === 0) {
+                if (!window._extractedSections || Object.keys(window._extractedSections).length === 0) {
                     showToast('No Data', 'Please scrape a job first.', 'error');
                     suggestionsBody.innerHTML = `
                         <div class="suggestions-error">
@@ -1043,7 +1021,7 @@ Please output ONLY the content for the "${key}" section. Do not include the sect
                 addLog('💡 Generating resume tailoring suggestions...', 'info');
                 
                 try {
-                    const context = Object.entries(window._currentSections)
+                    const context = Object.entries(window._extractedSections)
                         .filter(([k,v]) => v && v.length > 10)
                         .map(([k,v]) => `${k}: ${v}`).join('\n\n');
                     
@@ -1144,7 +1122,7 @@ Provide your tips:
             
             window.generateTailoringSuggestions = generateTailoringSuggestions;
             
-            // ─── Main Fetch Function ──────────────────────────────────────
+            // ─── Main Fetch Function ──────────────────────────────────────────
             
             async function fetchAndExtract() {
                 const url = urlInput.value.trim();
@@ -1220,15 +1198,12 @@ Provide your tips:
                     metaStatus.className = 'value active';
                     metaJobId.textContent = jobInfo.jobId || 'N/A';
                     metaPosted.textContent = jobInfo.posted ? new Date(jobInfo.posted).toLocaleDateString() : 'N/A';
-                    metaDeadline.textContent = jobInfo.deadline ? new Date(jobInfo.deadline).toLocaleDateString() : 'N/A';
+                    metaLocation.textContent = jobInfo.location || 'Not specified';
                     jobMeta.style.display = 'flex';
-                    
-                    addLog('🔍 Extracting job sections using AI...', 'info');
                     
                     // Get the main text content (strip HTML)
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    // Try to get the main content from common containers
                     let mainText = '';
                     const containers = doc.querySelectorAll('[data-automation-id="jobPostingDescription"], .job-description, #job-description, .description, .job-details, .posting-description, .content, article');
                     for (const container of containers) {
@@ -1240,18 +1215,24 @@ Provide your tips:
                     if (!mainText) {
                         mainText = doc.body?.textContent || '';
                     }
-                    // Clean up whitespace
                     mainText = mainText.replace(/\s+/g, ' ').trim();
                     
-                    if (mainText.length < 100) {
+                    if (mainText.length < 50) {
                         throw new Error('Could not extract sufficient text from the page.');
                     }
                     
-                    // Parse with AI
-                    const sections = await parseJobPosting(mainText);
+                    addLog('🔍 Extracting sections using regex pattern matching...', 'info');
+                    const sections = extractSectionsRegex(mainText);
+                    
+                    // Merge with meta info for certain fields
+                    if (!sections['Job Title'] && jobInfo.title) sections['Job Title'] = jobInfo.title;
+                    if (!sections['Company'] && jobInfo.company) sections['Company'] = jobInfo.company;
+                    if (!sections['Location'] && jobInfo.location) sections['Location'] = jobInfo.location;
+                    if (!sections['Job ID'] && jobInfo.jobId) sections['Job ID'] = jobInfo.jobId;
+                    if (!sections['Date Posted'] && jobInfo.posted) sections['Date Posted'] = jobInfo.posted;
                     
                     // Store and render
-                    window._currentSections = sections;
+                    window._extractedSections = sections;
                     renderSections(sections);
                     
                     // Show suggestions panel
@@ -1259,8 +1240,8 @@ Provide your tips:
                     suggestionsBody.innerHTML = '<div class="suggestions-loading">Click "Generate Suggestions" for AI-powered resume tailoring tips.</div>';
                     
                     setStatus('Success', 'success');
-                    addLog(`✅ Job sections extracted successfully.`, 'success');
-                    showToast('Success!', 'Job description sections extracted.');
+                    addLog(`✅ Extracted ${Object.keys(sections).filter(k => sections[k] && sections[k].length > 3).length} sections using regex.`, 'success');
+                    showToast('Success!', 'Job sections extracted using pattern matching.');
                     hideProgress(true);
                     
                 } catch (error) {
@@ -1282,12 +1263,12 @@ Provide your tips:
             
             // ─── Init Log ──────────────────────────────────────────────────────
             
-            addLog('🔗 Enter any URL and click Scrape to extract job sections.', 'info');
-            addLog('💡 AI will parse the job posting into 10 standard sections.', 'info');
+            addLog('🔗 Enter any URL and click Scrape to extract job sections using regex.', 'info');
+            addLog('💡 The tool looks for keywords like Experience, Skills, Responsibilities, Location, etc.', 'info');
             addLog('💡 Click "Generate Suggestions" for resume tailoring tips.', 'info');
             
             if (typeof window.RAGina !== 'undefined') {
-                addLog('🧠 RAGina AI loaded.', 'success');
+                addLog('🧠 RAGina AI loaded for suggestions.', 'success');
             } else {
                 addLog('⚠️ RAGina not loaded. Using fallback API.', 'warn');
             }
