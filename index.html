@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DesCrapper – Smart Web Scraper</title>
-    <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js"></script>
+    
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+    
+    <!-- RAGina for AI enhancement -->
+    <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js"></script>
+    
     <style>
+        /* ─────────────────── RESET & BASE ─────────────────── */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -38,6 +44,8 @@
             margin-bottom: 1.5rem;
             font-size: 0.95rem;
         }
+
+        /* ─────────────────── INPUT ROW ─────────────────── */
         .input-row {
             display: flex;
             flex-wrap: wrap;
@@ -98,6 +106,8 @@
             min-width: 120px;
             text-align: right;
         }
+
+        /* ─────────────────── SETTINGS ─────────────────── */
         .settings-toggle {
             background: none;
             border: none;
@@ -140,6 +150,8 @@
             color: #64748b;
             font-size: 0.75rem;
         }
+
+        /* ─────────────────── PANELS ─────────────────── */
         .panels {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -229,6 +241,8 @@
         .panel-body table tr:hover td {
             background: #f8fafc;
         }
+
+        /* ─────────────────── TABS ─────────────────── */
         .tabs {
             display: flex;
             gap: 0.25rem;
@@ -263,6 +277,8 @@
             padding: 3rem 1rem;
             font-style: italic;
         }
+
+        /* ─────────────────── CONSOLE ─────────────────── */
         .console-wrapper {
             margin-top: 1.5rem;
             background: white;
@@ -343,6 +359,7 @@
         .console-body .log-entry .level.success {
             color: #34d399;
         }
+
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -714,12 +731,12 @@
                 return html;
             }
 
-            // ─── ENHANCED EXTRACTION WITH JSON-LD ────────────────────────────
+            // ─── ENHANCED EXTRACTION WITH JSON-LD + DOM ────────────────────
             function extractLocal(html, baseUrl) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
-                // ─── 1. LOOK FOR JSON-LD JOB POSTING ───
+                // ─── 1. FIRST: Try JSON-LD (most reliable) ───
                 let jobData = null;
                 const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
                 for (let script of scripts) {
@@ -806,7 +823,6 @@
                     }
 
                     let mainContent = description.slice(0, 800);
-
                     let summary = '';
                     if (description) {
                         const sentences = description.match(/[^.!?]+[.!?]+/g);
@@ -852,49 +868,163 @@
                     };
                 }
 
-                // ─── 3. FALLBACK: Traditional extraction ───
-                console.log('⚠️ No JSON-LD found, using fallback extraction');
+                // ─── 3. FALLBACK: Direct DOM extraction (for fully rendered pages) ───
+                console.log('⚠️ No JSON-LD found, using DOM extraction');
 
-                const title = doc.querySelector('title')?.textContent?.trim() || '';
                 let description = '';
-                const metaDesc = doc.querySelector('meta[name="description"]');
-                if (metaDesc) description = metaDesc.getAttribute('content')?.trim() || '';
-                const keywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content')?.trim() || '';
-                const h1 = doc.querySelector('h1')?.textContent?.trim() || '';
-                const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
-                const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() || '';
+                let title = '';
+                let hiringOrg = '';
+                let jobLocation = '';
+                let employmentType = '';
+                let datePosted = '';
+                let jobId = '';
+
+                // 3a. Look for the job posting details container
+                const detailsContainer = doc.querySelector('[data-automation-id="job-posting-details"]');
+                if (detailsContainer) {
+                    console.log('✅ Found job-posting-details container');
+
+                    // Extract description from the jobPostingDescription
+                    const descContainer = detailsContainer.querySelector('[data-automation-id="jobPostingDescription"]');
+                    if (descContainer) {
+                        description = descContainer.textContent?.trim() || '';
+                        console.log(`✅ Extracted description (${description.length} chars)`);
+                    }
+
+                    // Extract location from locations
+                    const locationContainer = detailsContainer.querySelector('[data-automation-id="locations"]');
+                    if (locationContainer) {
+                        const locationItems = locationContainer.querySelectorAll('dd');
+                        jobLocation = Array.from(locationItems)
+                            .map(el => el.textContent?.trim())
+                            .filter(Boolean)
+                            .join(', ');
+                    }
+
+                    // Extract time type
+                    const timeContainer = detailsContainer.querySelector('[data-automation-id="time"]');
+                    if (timeContainer) {
+                        const timeItems = timeContainer.querySelectorAll('dd');
+                        employmentType = Array.from(timeItems)
+                            .map(el => el.textContent?.trim())
+                            .filter(Boolean)
+                            .join(', ');
+                    }
+
+                    // Extract posted date
+                    const postedContainer = detailsContainer.querySelector('[data-automation-id="postedOn"]');
+                    if (postedContainer) {
+                        const postedItems = postedContainer.querySelectorAll('dd');
+                        datePosted = Array.from(postedItems)
+                            .map(el => el.textContent?.trim())
+                            .filter(Boolean)
+                            .join(', ');
+                    }
+
+                    // Extract requisition ID
+                    const reqContainer = detailsContainer.querySelector('[data-automation-id="requisitionId"]');
+                    if (reqContainer) {
+                        const reqItems = reqContainer.querySelectorAll('dd');
+                        jobId = Array.from(reqItems)
+                            .map(el => el.textContent?.trim())
+                            .filter(Boolean)
+                            .join(', ');
+                    }
+                }
+
+                // 3b. Get title from header
+                const headerTitle = doc.querySelector('[data-automation-id="jobPostingHeader"]');
+                if (headerTitle) {
+                    title = headerTitle.textContent?.trim() || '';
+                }
+
+                // 3c. Try to get hiring organization from other sources
+                const orgElement = doc.querySelector('.job-company, [data-automation-id="company"]');
+                if (orgElement) {
+                    hiringOrg = orgElement.textContent?.trim() || '';
+                }
+
+                // 3d. If description is still empty, try broader selectors
+                if (!description) {
+                    const selectors = [
+                        '[data-automation-id="jobPostingDescription"]',
+                        '.job-description',
+                        '#job-description',
+                        '.description',
+                        '.posting-description',
+                        '.job-details',
+                        'article',
+                        '.content'
+                    ];
+                    for (const selector of selectors) {
+                        const element = doc.querySelector(selector);
+                        if (element && element.textContent.trim().length > 50) {
+                            description = element.textContent.trim();
+                            console.log(`✅ Found description via selector: ${selector}`);
+                            break;
+                        }
+                    }
+                }
+
+                // 3e. Clean description (remove excessive whitespace)
+                if (description) {
+                    description = description.replace(/\s+/g, ' ').trim();
+                }
+
+                // 3f. Generate keywords from title if available
+                let keywords = '';
+                if (title) {
+                    keywords = title.split(' ')
+                        .filter(w => w.length > 2)
+                        .slice(0, 8)
+                        .join(', ');
+                }
+
+                // 3g. Generate summary from description
+                let summary = '';
+                if (description) {
+                    const sentences = description.match(/[^.!?]+[.!?]+/g);
+                    if (sentences && sentences.length > 0) {
+                        summary = sentences[0].trim();
+                    } else {
+                        summary = description.slice(0, 150);
+                    }
+                }
+
+                // 3h. Get og:image
                 const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() || '';
-                const links = Array.from(doc.querySelectorAll('a[href]'))
-                    .map(a => a.getAttribute('href'))
-                    .filter(h => h && !h.startsWith('javascript:'))
-                    .slice(0, 50);
-                const images = Array.from(doc.querySelectorAll('img[src]'))
-                    .map(img => img.getAttribute('src'))
-                    .filter(src => src)
-                    .slice(0, 30);
+
+                // 3i. Get regular meta description
+                const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
+
+                // 3j. Get title from meta if not found
+                if (!title) {
+                    title = doc.querySelector('title')?.textContent?.trim() || '';
+                }
 
                 return {
                     url: baseUrl,
-                    title,
-                    description,
-                    keywords,
-                    h1,
-                    ogTitle,
-                    ogDescription: ogDesc,
-                    ogImage,
-                    linksCount: links.length,
-                    imagesCount: images.length,
-                    sampleLinks: links.slice(0, 10),
-                    sampleImages: images.slice(0, 10),
+                    title: title || '',
+                    description: description || metaDesc || '',
+                    keywords: keywords || '',
+                    h1: title || '',
+                    ogTitle: title || '',
+                    ogDescription: description.slice(0, 200) || metaDesc.slice(0, 200) || '',
+                    ogImage: ogImage || '',
+                    linksCount: 0,
+                    imagesCount: 0,
+                    sampleLinks: [],
+                    sampleImages: [],
                     htmlSize: html.length,
-                    hiringOrganization: '',
-                    jobLocation: '',
-                    employmentType: '',
-                    datePosted: '',
-                    author: '',
-                    publishedDate: '',
-                    mainContent: description.slice(0, 800),
-                    summary: description.slice(0, 150),
+                    hiringOrganization: hiringOrg || '',
+                    jobLocation: jobLocation || '',
+                    employmentType: employmentType || '',
+                    datePosted: datePosted || '',
+                    author: hiringOrg || '',
+                    publishedDate: datePosted || '',
+                    mainContent: description.slice(0, 800) || '',
+                    summary: summary || '',
+                    jobId: jobId || '',
                 };
             }
 
