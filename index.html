@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DesCrapper – Smart Web Scraper</title>
+    <!-- RAGina for AI enhancement -->
+    <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js"></script>
+    <style>
+        /* ─────────────────── RESET & BASE ─────────────────── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fc;
+            color: #1e293b;
+            padding: 2rem 1.5rem;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* ─────────────────── INPUT ROW ─────────────────── */
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            align-items: center;
+        }
+        .input-row label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+        .input-row input[type="url"] {
+            flex: 1 1 300px;
+            padding: 0.6rem 1rem;
+            border: 1px solid #d1d9e6;
+            border-radius: 0.6rem;
+            font-size: 0.95rem;
+            background: #f1f5f9;
+            transition: 0.2s;
+        }
+        .input-row input[type="url"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .input-row button {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: 500;
+            padding: 0.6rem 1.8rem;
+            border-radius: 0.6rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .input-row button:hover {
+            background: #2563eb;
+        }
+        .input-row button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #94a3b8;
+        }
+        .status {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: #475569;
+            min-width: 120px;
+            text-align: right;
+        }
+
+        /* ─────────────────── SETTINGS ─────────────────── */
+        .settings-toggle {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: underline dotted;
+        }
+        .settings-panel {
+            background: white;
+            border-radius: 0.8rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            display: none;
+            flex-wrap: wrap;
+            gap: 1rem 1.5rem;
+            align-items: center;
+        }
+        .settings-panel.open {
+            display: flex;
+        }
+        .settings-panel label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            flex: 1 0 200px;
+        }
+        .settings-panel input {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #d1d9e6;
+            border-radius: 0.4rem;
+            font-size: 0.85rem;
+            background: #f8fafc;
+        }
+        .settings-panel .hint {
+            font-weight: 400;
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+
+        /* ─────────────────── PANELS ─────────────────── */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        @media (max-width: 900px) {
+            .panels {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+        .panel-header {
+            padding: 0.75rem 1.25rem;
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .panel-header .badge {
+            font-weight: 400;
+            font-size: 0.7rem;
+            background: #dbeafe;
+            color: #1e4f8a;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+        }
+        .panel-body {
+            padding: 1rem;
+            flex: 1;
+            overflow: auto;
+        }
+        .panel-body iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0.3rem;
+            background: white;
+            min-height: 400px;
+        }
+        .panel-body pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            overflow: auto;
+            max-height: 500px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+        .panel-body .table-wrap {
+            overflow: auto;
+            max-height: 500px;
+        }
+        .panel-body table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .panel-body table th,
+        .panel-body table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+        }
+        .panel-body table th {
+            background: #f1f5f9;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .panel-body table tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* ─────────────────── TABS ─────────────────── */
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .tabs button {
+            background: none;
+            border: none;
+            padding: 0.3rem 1rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            transition: 0.15s;
+            font-size: 0.85rem;
+        }
+        .tabs button.active {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .empty-state {
+            color: #94a3b8;
+            text-align: center;
+            padding: 3rem 1rem;
+            font-style: italic;
+        }
+
+        /* ─────────────────── CONSOLE ─────────────────── */
+        .console-wrapper {
+            margin-top: 1.5rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .console-header {
+            padding: 0.5rem 1.25rem;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .console-header .left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .console-header .left span {
+            font-weight: 500;
+        }
+        .console-header .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .console-header .actions button {
+            background: none;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: #475569;
+            transition: 0.1s;
+        }
+        .console-header .actions button:hover {
+            background: #e2e8f0;
+        }
+        .console-body {
+            padding: 0.5rem 1rem;
+            max-height: 250px;
+            overflow-y: auto;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            display: none;
+        }
+        .console-body.open {
+            display: block;
+        }
+        .console-body .log-entry {
+            padding: 0.15rem 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .console-body .log-entry .time {
+            color: #94a3b8;
+            margin-right: 0.75rem;
+        }
+        .console-body .log-entry .level {
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        .console-body .log-entry .level.info {
+            color: #60a5fa;
+        }
+        .console-body .log-entry .level.warn {
+            color: #fbbf24;
+        }
+        .console-body .log-entry .level.error {
+            color: #f87171;
+        }
+        .console-body .log-entry .level.success {
+            color: #34d399;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 0.4rem;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>🔍 DesCrapper</span>
+            <button class="settings-toggle" id="settingsToggle">⚙️ Settings</button>
+        </h1>
+        <div class="subtitle">Fetch any webpage (even JavaScript‑rendered) via your secure Worker, extract structured data, and enhance with AI.</div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            <label>
+                Worker URL
+                <input type="url" id="workerUrl" placeholder="https://your-worker.workers.dev" value="https://descrapper.varakala-saisurya.workers.dev" />
+                <span class="hint">Your Cloudflare Worker endpoint</span>
+            </label>
+            <label>
+                AI Endpoint (RAGina)
+                <input type="url" id="aiEndpoint" value="https://ragina-crawler-ragina.vercel.app/api/ask" />
+                <span class="hint">Leave as default for AI enhancement</span>
+            </label>
+            <label style="flex:1; min-width:100%;">
+                <span style="font-weight:400; font-size:0.75rem; color:#64748b;">
+                    ⚠️ Your API key stays safe in the Worker – never exposed in the frontend.
+                </span>
+            </label>
+        </div>
+
+        <!-- Input Row -->
+        <div class="input-row">
+            <label for="urlInput">🌐 URL</label>
+            <input type="url" id="urlInput" placeholder="https://example.com" value="https://lseg.wd3.myworkdayjobs.com/en-US/Careers/job/IND-Hyderabad-CapitaLand/Senior-QA-Engineer-Python-with-Jmeter-_R0116074" />
+            <button id="fetchBtn">🚀 Fetch & Extract</button>
+            <span class="status" id="statusMsg">Ready</span>
+        </div>
+
+        <!-- Two Panels -->
+        <div class="panels">
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📄 Live preview</span>
+                    <span class="badge">embedded</span>
+                </div>
+                <div class="panel-body" id="viewerContainer">
+                    <iframe id="embedIframe" srcdoc="<html><body style='font-family:sans-serif;color:#94a3b8;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;'>Enter a URL and click Fetch</body></html>"></iframe>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📊 Extracted Data</span>
+                    <span class="badge" id="dataSourceBadge">waiting</span>
+                </div>
+                <div class="panel-body">
+                    <div class="tabs">
+                        <button class="active" data-tab="json">JSON</button>
+                        <button data-tab="table">Table</button>
+                    </div>
+                    <div id="tabJson" class="tab-content active">
+                        <pre id="jsonOutput">{
+  "message": "Waiting for data..."
+}</pre>
+                    </div>
+                    <div id="tabTable" class="tab-content">
+                        <div class="table-wrap" id="tableOutput">
+                            <div class="empty-state">No data yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="console-wrapper">
+            <div class="console-header" id="consoleToggle">
+                <div class="left">
+                    <span>📋 Console</span>
+                    <span id="logCount" style="font-size:0.7rem; background:#e2e8f0; padding:0 0.4rem; border-radius:1rem;">0</span>
+                </div>
+                <div class="actions">
+                    <button id="copyLogsBtn">📄 Copy</button>
+                    <button id="clearLogsBtn">🗑️ Clear</button>
+                </div>
+            </div>
+            <div class="console-body" id="consoleBody">
+                <div class="log-entry"><span class="time">[init]</span> <span class="level info">ℹ️</span> Console ready</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ── DOM refs ──
+            const urlInput = document.getElementById('urlInput');
+            const fetchBtn = document.getElementById('fetchBtn');
+            const statusMsg = document.getElementById('statusMsg');
+            const embedIframe = document.getElementById('embedIframe');
+            const jsonOutput = document.getElementById('jsonOutput');
+            const tableOutput = document.getElementById('tableOutput');
+            const dataSourceBadge = document.getElementById('dataSourceBadge');
+            const settingsToggle = document.getElementById('settingsToggle');
+            const settingsPanel = document.getElementById('settingsPanel');
+            const workerUrl = document.getElementById('workerUrl');
+            const aiEndpoint = document.getElementById('aiEndpoint');
+
+            // Console elements
+            const consoleBody = document.getElementById('consoleBody');
+            const logCount = document.getElementById('logCount');
+            const copyLogsBtn = document.getElementById('copyLogsBtn');
+            const clearLogsBtn = document.getElementById('clearLogsBtn');
+            const consoleToggle = document.getElementById('consoleToggle');
+
+            // ── Console functions ──
+            let logEntries = [];
+
+            function addLog(message, level = 'info') {
+                const time = new Date().toLocaleTimeString();
+                logEntries.push({ time, message, level });
+                renderConsole();
+            }
+
+            function renderConsole() {
+                if (logEntries.length > 200) logEntries = logEntries.slice(-200);
+                consoleBody.innerHTML = logEntries.map(entry =>
+                    `<div class="log-entry"><span class="time">[${entry.time}]</span> <span class="level ${entry.level}">${entry.level === 'info' ? 'ℹ️' : entry.level === 'warn' ? '⚠️' : entry.level === 'error' ? '❌' : '✅'}</span> ${escapeHtml(entry.message)}</div>`
+                ).join('');
+                logCount.textContent = logEntries.length;
+                consoleBody.scrollTop = consoleBody.scrollHeight;
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            clearLogsBtn.addEventListener('click', () => {
+                logEntries = [];
+                renderConsole();
+                addLog('Logs cleared', 'info');
+            });
+
+            copyLogsBtn.addEventListener('click', () => {
+                const text = logEntries.map(e => `[${e.time}] ${e.level.toUpperCase()}: ${e.message}`).join('\n');
+                navigator.clipboard?.writeText(text).then(() => {
+                    addLog('Logs copied to clipboard', 'success');
+                }).catch(() => {
+                    const area = document.createElement('textarea');
+                    area.value = text;
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand('copy');
+                    area.remove();
+                    addLog('Logs copied (fallback)', 'success');
+                });
+            });
+
+            let consoleOpen = false;
+            consoleToggle.addEventListener('click', (e) => {
+                if (e.target.closest('.actions')) return;
+                consoleOpen = !consoleOpen;
+                consoleBody.classList.toggle('open', consoleOpen);
+            });
+            consoleBody.classList.add('open');
+            consoleOpen = true;
+
+            // ── settings toggle ──
+            settingsToggle.addEventListener('click', () => {
+                settingsPanel.classList.toggle('open');
+                settingsToggle.textContent = settingsPanel.classList.contains('open') ? '⚙️ Close settings' :
+                '⚙️ Settings';
+            });
+
+            // ── tabs ──
+            document.querySelectorAll('.tabs button').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const target = this.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                    document.getElementById('tab' + target.charAt(0).toUpperCase() + target.slice(1)).classList
+                        .add('active');
+                });
+            });
+
+            // ─── Helper: cleanText ────────────────────────────────────────────
+            function cleanText(text) {
+                if (!text) return '';
+                text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+                text = text.replace(/�/g, '');
+                text = text.replace(/=H\s*sN\s*z/g, '');
+                text = text.replace(/\u001e/g, '');
+                text = text.replace(/\u0010/g, '');
+                text = text.replace(/\u0012/g, '');
+                text = text.replace(/\u0018/g, '');
+                text = text.replace(/\u0017/g, '');
+                const lines = text.split('\n').filter(l => l.trim());
+                const instructionKeywords = [
+                    'please', 'note:', 'requirements:', 'output only', 'no extra',
+                    'extract the', 'go ahead', 'thank you', 'format as', 'include',
+                    'use only', 'do not', 'make it', 'keep it', 'list the',
+                    'for each', 'with clear', 'use action', 'output in', 'focus on'
+                ];
+                const filtered = lines.filter(line => {
+                    const lower = line.toLowerCase();
+                    const isInstruction = instructionKeywords.some(kw => lower.includes(kw) && lower.length < 80);
+                    const isDash = /^[-—]{3,}$/.test(line.trim());
+                    return !isInstruction && !isDash;
+                });
+                let result = filtered.join('\n').trim();
+                if (!result) {
+                    const allLines = lines;
+                    const startIdx = allLines.findIndex(line => {
+                        const lower = line.toLowerCase();
+                        return instructionKeywords.every(kw => !lower.includes(kw)) && line.length > 10;
+                    });
+                    if (startIdx !== -1) {
+                        result = allLines.slice(startIdx).join('\n').trim();
+                    } else {
+                        result = text;
+                    }
+                }
+                result = result.replace(/^[-—]+\s*/, '').replace(/\s*[-—]+$/, '');
+                return result;
+            }
+
+            // ─── askLLM using RAGina backend ────────────────────────────────
+            async function askLLM(prompt, fallbackKeywords) {
+                const endpoint = aiEndpoint.value.trim() || 'https://ragina-crawler-ragina.vercel.app/api/ask';
+                const maxRetries = 2;
+                for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'Accept-Encoding': 'identity'
+                            },
+                            body: JSON.stringify({ prompt })
+                        });
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText.slice(0,200)}`);
+                        }
+                        let rawText = await response.text();
+                        if (rawText.charCodeAt(0) === 0xFEFF) rawText = rawText.slice(1);
+                        let data;
+                        try {
+                            data = JSON.parse(rawText);
+                        } catch (e) {
+                            const cleaned = cleanText(rawText);
+                            if (cleaned && cleaned.length > 10) return cleaned;
+                            throw new Error('Invalid JSON response');
+                        }
+                        if (data.text) {
+                            const cleaned = cleanText(data.text);
+                            if (cleaned && cleaned.length > 10) return cleaned;
+                            const extracted = extractReadableText(data.text);
+                            if (extracted && extracted.length > 10) return extracted;
+                            throw new Error('Empty or garbled response');
+                        }
+                        if (data.error) throw new Error(data.error);
+                        const cleanedRaw = cleanText(rawText);
+                        if (cleanedRaw && cleanedRaw.length > 10) return cleanedRaw;
+                        throw new Error('No text content');
+                    } catch (error) {
+                        if (attempt === maxRetries) {
+                            console.error('LLM error after retries:', error);
+                            return generateFallback(prompt, fallbackKeywords);
+                        }
+                        await new Promise(r => setTimeout(r, 1000 * attempt));
+                    }
+                }
+                return generateFallback(prompt, fallbackKeywords);
+            }
+
+            function generateFallback(prompt, keywords) {
+                if (!keywords || keywords.length === 0) {
+                    return "Unable to generate analysis. Please try again later.";
+                }
+                const keywordList = keywords.slice(0, 6).join(', ');
+                const lower = prompt.toLowerCase();
+                if (lower.includes('summary') || lower.includes('overview')) {
+                    return `This page appears to be about ${keywordList}. It contains information relevant to these topics.`;
+                } else if (lower.includes('json')) {
+                    return `{"title": "Sample Title", "description": "This is a fallback description", "keywords": ["${keywords.slice(0,3).join('", "')}"]}`;
+                } else {
+                    return `Generated analysis using keywords: ${keywordList}. Please refine with specific prompts.`;
+                }
+            }
+
+            function extractReadableText(text) {
+                const words = text.match(/[A-Za-z]{3,}/g);
+                if (words && words.length > 0) {
+                    let result = words.join(' ');
+                    result = result.replace(/\s+/g, ' ').trim();
+                    if (result.length > 10) return result;
+                }
+                const printable = text.match(/[A-Za-z0-9\s,.!?\-:;'"()]{10,}/g);
+                if (printable && printable.length > 0) {
+                    return printable.join(' ').trim();
+                }
+                return '';
+            }
+
+            // ─── Extract keywords from text ──────────────────────────────────
+            function extractKeywords(text) {
+                const skillPatterns = [
+                    'Python', 'Java', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue', 'Node', 'Express',
+                    'Django', 'Flask', 'Spring', 'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'CI/CD', 'Jenkins',
+                    'Git', 'JIRA', 'Agile', 'Scrum', 'SAFe', 'API', 'REST', 'GraphQL', 'SQL', 'MongoDB', 'PostgreSQL',
+                    'MySQL', 'Oracle', 'JMeter', 'Selenium', 'Cypress', 'Playwright', 'Go', 'Rust', 'C++', 'C#', 'Ruby',
+                    'PHP', 'Leadership', 'Communication', 'Problem Solving', 'Teamwork', 'Automation', 'Testing',
+                    'Cloud', 'DevOps', 'Security', 'Data', 'Analytics', 'Financial', 'Markets'
+                ];
+                const found = [];
+                const lowerText = text.toLowerCase();
+                for (let skill of skillPatterns) {
+                    if (lowerText.includes(skill.toLowerCase())) found.push(skill);
+                }
+                const capMatches = text.match(/\b[A-Z][A-Za-z\+#]+\b/g) || [];
+                for (let match of capMatches) {
+                    if (match.length > 2 && !found.includes(match) && !found.includes(match.toLowerCase())) {
+                        found.push(match);
+                    }
+                }
+                return [...new Set(found)].slice(0, 20);
+            }
+
+            // ─── Fetch via Worker ─────────────────────────────────────────────
+            async function fetchViaWorker(url, workerEndpoint) {
+                const response = await fetch(workerEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+                if (!response.ok) {
+                    let errorMsg = `Worker error (${response.status})`;
+                    try {
+                        const errorJson = await response.json();
+                        if (errorJson.error) errorMsg += `: ${errorJson.error}`;
+                    } catch (_) {}
+                    throw new Error(errorMsg);
+                }
+                // The worker returns the HTML directly
+                const html = await response.text();
+                if (html.length < 100) {
+                    throw new Error('Worker returned empty or very short response');
+                }
+                return html;
+            }
+
+            // ─── Enhanced local extraction with JSON‑LD ──────────────────────
+            function extractLocal(html, baseUrl) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 1. Try JSON‑LD JobPosting
+                let jobData = null;
+                const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+                for (let script of scripts) {
+                    try {
+                        const json = JSON.parse(script.textContent);
+                        let items = Array.isArray(json) ? json : [json];
+                        for (let item of items) {
+                            if (item['@type'] === 'JobPosting' ||
+                                (Array.isArray(item['@type']) && item['@type'].includes('JobPosting'))) {
+                                jobData = item;
+                                break;
+                            }
+                        }
+                        if (jobData) break;
+                    } catch (e) { /* ignore */ }
+                }
+
+                let title = '',
+                    description = '',
+                    hiringOrg = '',
+                    jobLocation = '',
+                    employmentType = '',
+                    datePosted = '';
+
+                if (jobData) {
+                    title = jobData.title || '';
+                    description = jobData.description || '';
+                    if (jobData.hiringOrganization) {
+                        hiringOrg = typeof jobData.hiringOrganization === 'string' ? jobData.hiringOrganization :
+                            jobData.hiringOrganization.name || '';
+                    }
+                    if (jobData.jobLocation) {
+                        const loc = jobData.jobLocation;
+                        if (typeof loc === 'string') jobLocation = loc;
+                        else if (loc.address) {
+                            jobLocation = loc.address.addressLocality || loc.address.addressRegion || loc.address
+                                .addressCountry || '';
+                        }
+                    }
+                    employmentType = jobData.employmentType || '';
+                    datePosted = jobData.datePosted || '';
+                }
+
+                // Fallback to standard meta
+                if (!title) {
+                    title = doc.querySelector('title')?.textContent?.trim() || '';
+                }
+                if (!description) {
+                    const metaDesc = doc.querySelector('meta[name="description"]');
+                    if (metaDesc) description = metaDesc.getAttribute('content')?.trim() || '';
+                }
+                const keywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content')?.trim() || '';
+                const h1 = doc.querySelector('h1')?.textContent?.trim() || '';
+                const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
+                const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() || '';
+                const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() || '';
+
+                // Links & images
+                const links = Array.from(doc.querySelectorAll('a[href]'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(h => h && !h.startsWith('javascript:'))
+                    .slice(0, 50);
+                const images = Array.from(doc.querySelectorAll('img[src]'))
+                    .map(img => img.getAttribute('src'))
+                    .filter(src => src)
+                    .slice(0, 30);
+
+                // Strip HTML from description
+                if (description && description.includes('<')) {
+                    const div = document.createElement('div');
+                    div.innerHTML = description;
+                    description = div.textContent || description;
+                }
+
+                return {
+                    url: baseUrl,
+                    title: title || '',
+                    description: description || '',
+                    keywords: keywords || '',
+                    h1: h1 || '',
+                    ogTitle: ogTitle || '',
+                    ogDescription: ogDesc || '',
+                    ogImage: ogImage || '',
+                    linksCount: links.length,
+                    imagesCount: images.length,
+                    sampleLinks: links.slice(0, 10),
+                    sampleImages: images.slice(0, 10),
+                    htmlSize: html.length,
+                    hiringOrganization: hiringOrg,
+                    jobLocation: jobLocation,
+                    employmentType: employmentType,
+                    datePosted: datePosted,
+                };
+            }
+
+            // ─── AI analysis ──────────────────────────────────────────────────
+            async function analyzeWithAI(text, url) {
+                const keywords = extractKeywords(text);
+                const prompt = `
+        You are a data extraction assistant. Analyze the following text content (job description or page content) and return a valid JSON object with these fields:
+        - "title": string (page title or job title)
+        - "description": string (the main description, max 500 chars)
+        - "author": string (if found)
+        - "publishedDate": string (if found, ISO format)
+        - "mainContent": string (first 800 characters of the main text)
+        - "keywords": array of strings (top 10 important keywords)
+        - "summary": string (one-sentence summary)
+
+        If a field is missing, set it to null.
+        Text content:
+        ${text.slice(0, 8000)}
+        `;
+                const result = await askLLM(prompt, keywords);
+                let cleaned = result.trim();
+                const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+                if (jsonMatch) cleaned = jsonMatch[0];
+                try {
+                    return JSON.parse(cleaned);
+                } catch (e) {
+                    addLog('⚠️ AI returned invalid JSON, using local extraction', 'warn');
+                    return null;
+                }
+            }
+
+            // ─── Render data ──────────────────────────────────────────────────
+            function renderData(data) {
+                jsonOutput.textContent = JSON.stringify(data, null, 2);
+                const rows = [];
+                for (const [key, val] of Object.entries(data)) {
+                    let displayVal = val;
+                    if (Array.isArray(val)) {
+                        displayVal = val.length > 0 ? val.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join(
+                            ', ') : '(empty)';
+                    } else if (typeof val === 'object' && val !== null) {
+                        displayVal = JSON.stringify(val);
+                    }
+                    rows.push(`<tr><td><strong>${key}</strong></td><td>${displayVal}</td></tr>`);
+                }
+                tableOutput.innerHTML =
+                    `<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+            }
+
+            // ─── Main fetch & extract ─────────────────────────────────────────
+            async function fetchAndExtract() {
+                const url = urlInput.value.trim();
+                if (!url) {
+                    addLog('⚠️ Please enter a URL', 'warn');
+                    return;
+                }
+
+                const workerEndpoint = workerUrl.value.trim();
+                if (!workerEndpoint) {
+                    addLog('⚠️ Please enter your Worker URL in Settings', 'warn');
+                    settingsPanel.classList.add('open');
+                    workerUrl.focus();
+                    return;
+                }
+
+                fetchBtn.disabled = true;
+                statusMsg.innerHTML = '<span class="loading-spinner"></span> Fetching via Worker...';
+                addLog(`Fetching: ${url}`, 'info');
+
+                try {
+                    // 1. Get HTML via your Worker
+                    const html = await fetchViaWorker(url, workerEndpoint);
+                    embedIframe.srcdoc = html;
+
+                    // 2. Local extraction (includes JSON‑LD)
+                    const localData = extractLocal(html, url);
+                    addLog(`Local extraction: title="${localData.title}", description length=${localData.description.length}`,
+                        'info');
+
+                    // 3. AI enhancement
+                    let finalData = localData;
+                    let usedAI = false;
+                    const textToAnalyze = localData.description || localData.title || '';
+                    if (textToAnalyze && textToAnalyze.length > 20) {
+                        try {
+                            addLog('Calling AI analysis...', 'info');
+                            const aiResult = await analyzeWithAI(textToAnalyze, url);
+                            if (aiResult) {
+                                finalData = { ...localData, ...aiResult };
+                                usedAI = true;
+                                addLog('✅ AI analysis succeeded', 'success');
+                            }
+                        } catch (aiErr) {
+                            addLog(`AI analysis error: ${aiErr.message}`, 'error');
+                        }
+                    }
+
+                    // 4. Render
+                    renderData(finalData);
+                    dataSourceBadge.textContent = usedAI ? 'Worker + AI' : 'Worker';
+                    statusMsg.textContent = '✅ Done';
+                    addLog('Extraction complete', 'success');
+                } catch (err) {
+                    addLog(`❌ Error: ${err.message}`, 'error');
+                    statusMsg.textContent = '❌ Error: ' + err.message;
+                    jsonOutput.textContent = JSON.stringify({ error: err.message }, null, 2);
+                    tableOutput.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+                } finally {
+                    fetchBtn.disabled = false;
+                }
+            }
+
+            // ─── Event binding ─────────────────────────────────────────────────
+            fetchBtn.addEventListener('click', fetchAndExtract);
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') fetchBtn.click();
+            });
+
+            // ─── Init log ──────────────────────────────────────────────────────
+            const raginaLoaded = typeof window.RAGina !== 'undefined';
+            addLog(`Ready. RAGina ${raginaLoaded ? 'loaded' : 'not loaded'}.`, 'info');
+            if (!raginaLoaded) {
+                addLog('⚠️ RAGina CDN not loaded. AI may not work.', 'warn');
+            }
+            addLog('🔗 Enter your Worker URL in Settings, then fetch.', 'info');
+
+        })();
+    </script>
+</body>
+</html>
