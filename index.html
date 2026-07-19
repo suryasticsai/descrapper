@@ -167,17 +167,46 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         .stat-card {
             background: white;
-            padding: 1rem 1.5rem;
+            padding: 0.8rem 1.2rem;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             text-align: center;
         }
-        .stat-card .number { font-size: 1.2rem; font-weight: 700; color: #4a6cf7; }
-        .stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem; }
+        .stat-card .number { font-size: 1.1rem; font-weight: 700; color: #4a6cf7; }
+        .stat-card .label { font-size: 0.7rem; color: #6b7280; margin-top: 0.2rem; }
+        
+        /* ─── Category Stats (chips) ─── */
+        .category-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .category-stats .chip {
+            background: #f1f5f9;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            border: 1px solid #e2e8f0;
+        }
+        .category-stats .chip .count {
+            font-weight: 700;
+            color: #4a6cf7;
+        }
+        .category-stats .chip .name {
+            color: #4a4a6a;
+        }
         
         /* ─────────────────── CATEGORY GRID ─────────────────── */
         .category-grid {
@@ -513,31 +542,6 @@
             font-style: italic;
         }
         
-        .action-bar {
-            display: flex;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-            margin: 1rem 0;
-        }
-        .action-bar button {
-            padding: 0.5rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary { background: #4a6cf7; color: white; }
-        .btn-primary:hover { background: #3a56d4; }
-        .btn-secondary { background: #e2e8f0; color: #1a1a2e; }
-        .btn-secondary:hover { background: #cbd5e1; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-purple { background: #8b5cf6; color: white; }
-        .btn-purple:hover { background: #7c3aed; }
-        
         /* ─────────────────── FOOTER ─────────────────── */
         footer {
             margin-top: 3rem;
@@ -607,11 +611,17 @@
             <span class="status-badge" id="statusBadge">Ready</span>
         </div>
         
+        <!-- Stats Cards -->
         <div class="stats">
             <div class="stat-card"><div class="number" id="jobTitle">-</div><div class="label">Job Title</div></div>
             <div class="stat-card"><div class="number" id="jobCompany">-</div><div class="label">Company</div></div>
             <div class="stat-card"><div class="number" id="jobStatus">-</div><div class="label">Status</div></div>
             <div class="stat-card"><div class="number" id="sectionCount">0</div><div class="label">Total Sections</div></div>
+        </div>
+        
+        <!-- Category Stats (dynamic chips) -->
+        <div id="categoryStats" class="category-stats" style="display:none;">
+            <!-- Will be populated by JS -->
         </div>
         
         <!-- Category Grid -->
@@ -674,6 +684,7 @@
             const fetchBtn = document.getElementById('fetchBtn');
             const statusBadge = document.getElementById('statusBadge');
             const categoryGrid = document.getElementById('categoryGrid');
+            const categoryStats = document.getElementById('categoryStats');
             const suggestionsPanel = document.getElementById('suggestionsPanel');
             const suggestionsBody = document.getElementById('suggestionsBody');
             const jobTitle = document.getElementById('jobTitle');
@@ -832,127 +843,127 @@
             // ─── 25+ Section Categories ──────────────────────────────────
             
             const CATEGORIES = {
-                '📋 About the Role': {
+                'About the Role': {
                     icon: '📋',
                     types: ['About the Role', 'Role Overview', 'Position Summary', 'Job Description'],
                     color: '#4a6cf7'
                 },
-                '📌 Key Responsibilities': {
+                'Key Responsibilities': {
                     icon: '📌',
                     types: ['Responsibilities', 'What You\'ll Do', 'Key Duties', 'Role Responsibilities', 'Core Responsibilities'],
                     color: '#f59e0b'
                 },
-                '📋 Requirements': {
+                'Requirements': {
                     icon: '📋',
                     types: ['Requirements', 'Qualifications', 'What You\'ll Bring', 'Must Have', 'Nice to Have', 'Basic Qualifications'],
                     color: '#ef4444'
                 },
-                '💼 Experience': {
+                'Experience': {
                     icon: '💼',
                     types: ['Experience', 'Years of Experience', 'Professional Experience', 'Work Experience', 'Industry Experience'],
                     color: '#f97316'
                 },
-                '🛠️ Technical Skills': {
+                'Technical Skills': {
                     icon: '🛠️',
                     types: ['Technical Skills', 'Programming', 'Languages', 'Frameworks', 'Tools', 'Technologies'],
                     color: '#06b6d4'
                 },
-                '🤝 Soft Skills': {
+                'Soft Skills': {
                     icon: '🤝',
                     types: ['Soft Skills', 'Communication', 'Leadership', 'Interpersonal', 'Problem Solving', 'Critical Thinking'],
                     color: '#14b8a6'
                 },
-                '🎓 Education': {
+                'Education': {
                     icon: '🎓',
                     types: ['Education', 'Degree', 'Academic Requirements', 'Field of Study', 'GPA'],
                     color: '#8b5cf6'
                 },
-                '📜 Certifications': {
+                'Certifications': {
                     icon: '📜',
                     types: ['Certifications', 'Certificates', 'Licenses', 'Professional Certifications', 'Accreditations'],
                     color: '#ec4899'
                 },
-                '👤 About You': {
+                'About You': {
                     icon: '👤',
                     types: ['About You', 'Who You Are', 'Your Profile', 'Ideal Candidate', 'Personal Qualities'],
                     color: '#8b5cf6'
                 },
-                '💰 Pay & Compensation': {
+                'Pay & Compensation': {
                     icon: '💰',
                     types: ['Pay', 'Salary', 'Compensation', 'Base Pay', 'Total Rewards', 'Bonus', 'Equity'],
                     color: '#10b981'
                 },
-                '🎁 Benefits': {
+                'Benefits': {
                     icon: '🎁',
                     types: ['Benefits', 'Perks', 'Health Insurance', 'Retirement', 'Time Off', 'Wellness'],
                     color: '#34d399'
                 },
-                '📍 Location': {
+                'Location': {
                     icon: '📍',
                     types: ['Location', 'Remote', 'Hybrid', 'Office', 'Work From', 'Telecommute', 'On-site'],
                     color: '#3b82f6'
                 },
-                '📈 Additional Preferences': {
+                'Additional Preferences': {
                     icon: '📈',
                     types: ['Additional Preferences', 'Nice to Have', 'Preferred Qualifications', 'Bonus Points', 'Plus'],
                     color: '#14b8a6'
                 },
-                '🏢 About Company': {
+                'About Company': {
                     icon: '🏢',
                     types: ['About Company', 'Who We Are', 'Our Culture', 'Our Values', 'Mission', 'Vision'],
                     color: '#6366f1'
                 },
-                '👥 Team Culture': {
+                'Team Culture': {
                     icon: '👥',
                     types: ['About the Team', 'Our Team', 'Team Culture', 'Work Environment', 'Collaboration'],
                     color: '#ec4899'
                 },
-                '📈 Career Growth': {
+                'Career Growth': {
                     icon: '📈',
                     types: ['Career Growth', 'Development', 'Learning', 'Growth Opportunities', 'Career Progression', 'Promotion'],
                     color: '#14b8a6'
                 },
-                '🌍 Diversity & Inclusion': {
+                'Diversity & Inclusion': {
                     icon: '🌍',
                     types: ['Diversity', 'Inclusion', 'Equal Opportunity', 'Belonging', 'DEI'],
                     color: '#8b5cf6'
                 },
-                '📊 Performance Metrics': {
+                'Performance Metrics': {
                     icon: '📊',
                     types: ['Metrics', 'KPIs', 'Performance', 'Goals', 'OKRs', 'Targets'],
                     color: '#f59e0b'
                 },
-                '🗓️ Schedule & Hours': {
+                'Schedule & Hours': {
                     icon: '🗓️',
                     types: ['Schedule', 'Hours', 'Shift', 'Work Hours', 'Flexibility', 'Overtime'],
                     color: '#06b6d4'
                 },
-                '✈️ Travel': {
+                'Travel': {
                     icon: '✈️',
                     types: ['Travel', 'Relocation', 'On-site', 'Client Visits', 'Business Trips'],
                     color: '#f97316'
                 },
-                '📝 Reporting Structure': {
+                'Reporting Structure': {
                     icon: '📝',
                     types: ['Reports To', 'Manager', 'Supervisor', 'Team Lead', 'Reporting'],
                     color: '#4a6cf7'
                 },
-                '🔧 Tools & Platforms': {
+                'Tools & Platforms': {
                     icon: '🔧',
                     types: ['Tools', 'Platforms', 'Software', 'Systems', 'Applications'],
                     color: '#06b6d4'
                 },
-                '📋 Day-to-Day': {
+                'Day-to-Day': {
                     icon: '📋',
                     types: ['Day-to-Day', 'Daily Tasks', 'Typical Day', 'Work Activities'],
                     color: '#f59e0b'
                 },
-                '🎯 Success Metrics': {
+                'Success Metrics': {
                     icon: '🎯',
                     types: ['Success Metrics', 'Evaluation', 'Performance Review', 'Achievements'],
                     color: '#10b981'
                 },
-                '📄 Other': {
+                'Other': {
                     icon: '📄',
                     types: [],
                     color: '#6b7280'
@@ -975,7 +986,7 @@
                         }
                     }
                 }
-                return '📄 Other';
+                return 'Other';
             }
             
             // ─── Extract Sections from HTML ──────────────────────────────────
@@ -1274,6 +1285,7 @@
                         
                         Format each tip as a clear, concise, actionable suggestion.
                         Number them 1-10.
+                        Do NOT use asterisks (*) or bullet symbols. Use plain numbered list.
                         
                         Job Description:
                         ${context}
@@ -1285,8 +1297,10 @@
                     
                     if (result && result.length > 50) {
                         // Parse the tips
-                        const tips = result.split(/\d+\.\s*/).filter(t => t.trim().length > 10);
-                        currentSuggestions = tips.map(t => t.trim());
+                        let tips = result.split(/\d+\.\s*/).filter(t => t.trim().length > 10);
+                        // Remove any leading/trailing asterisks or bullets
+                        tips = tips.map(t => t.replace(/^[\s*\•\-]+/, '').trim());
+                        currentSuggestions = tips;
                         renderSuggestions(currentSuggestions);
                         addLog(`✅ Generated ${currentSuggestions.length} tailoring suggestions`, 'success');
                         showToast('Suggestions Ready!', 'AI-generated resume tailoring tips are ready.', 'success');
@@ -1386,21 +1400,63 @@
             
             window.generateTailoringSuggestions = generateTailoringSuggestions;
             
+            // ─── Render Category Stats ──────────────────────────────────────────
+            
+            function renderCategoryStats(sections) {
+                const grouped = {};
+                for (const [category] of Object.entries(CATEGORIES)) {
+                    grouped[category] = 0;
+                }
+                grouped['Other'] = 0;
+                
+                for (const section of sections) {
+                    const category = getSectionType(section.heading + ' ' + section.content);
+                    if (grouped.hasOwnProperty(category)) {
+                        grouped[category]++;
+                    } else {
+                        grouped['Other']++;
+                    }
+                }
+                
+                // Show only categories with count > 0
+                let html = '';
+                for (const [category, count] of Object.entries(grouped)) {
+                    if (count === 0) continue;
+                    const catData = CATEGORIES[category] || { icon: '📄' };
+                    html += `
+                        <span class="chip">
+                            <span class="count">${count}</span>
+                            <span class="name">${catData.icon || ''} ${category}</span>
+                        </span>
+                    `;
+                }
+                if (html) {
+                    categoryStats.style.display = 'flex';
+                    categoryStats.innerHTML = html;
+                } else {
+                    categoryStats.style.display = 'none';
+                }
+            }
+            
             // ─── Render Category Grid ──────────────────────────────────────────
             
             function renderCategoryGrid(sections) {
                 if (!sections || sections.length === 0) {
                     categoryGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No sections found.</div>`;
                     suggestionsPanel.style.display = 'none';
+                    categoryStats.style.display = 'none';
                     return;
                 }
+                
+                // Update category stats
+                renderCategoryStats(sections);
                 
                 // Group sections by category
                 const grouped = {};
                 for (const [category] of Object.entries(CATEGORIES)) {
                     grouped[category] = [];
                 }
-                grouped['📄 Other'] = [];
+                grouped['Other'] = [];
                 
                 for (let i = 0; i < sections.length; i++) {
                     const section = sections[i];
@@ -1531,6 +1587,7 @@
                         addLog('⚠️ No sections found.', 'warn');
                         categoryGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No content sections found.</div>`;
                         suggestionsPanel.style.display = 'none';
+                        categoryStats.style.display = 'none';
                         hideProgress(false);
                         fetchBtn.disabled = false;
                         return;
