@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DesCrapper – Smart Web Scraper</title>
-    <!-- RAGina for AI enhancement -->
     <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
     <style>
-        /* ─────────────────── RESET & BASE ─────────────────── */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -38,8 +38,6 @@
             margin-bottom: 1.5rem;
             font-size: 0.95rem;
         }
-
-        /* ─────────────────── INPUT ROW ─────────────────── */
         .input-row {
             display: flex;
             flex-wrap: wrap;
@@ -100,8 +98,6 @@
             min-width: 120px;
             text-align: right;
         }
-
-        /* ─────────────────── SETTINGS ─────────────────── */
         .settings-toggle {
             background: none;
             border: none;
@@ -144,8 +140,6 @@
             color: #64748b;
             font-size: 0.75rem;
         }
-
-        /* ─────────────────── PANELS ─────────────────── */
         .panels {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -235,8 +229,6 @@
         .panel-body table tr:hover td {
             background: #f8fafc;
         }
-
-        /* ─────────────────── TABS ─────────────────── */
         .tabs {
             display: flex;
             gap: 0.25rem;
@@ -271,8 +263,6 @@
             padding: 3rem 1rem;
             font-style: italic;
         }
-
-        /* ─────────────────── CONSOLE ─────────────────── */
         .console-wrapper {
             margin-top: 1.5rem;
             background: white;
@@ -353,7 +343,6 @@
         .console-body .log-entry .level.success {
             color: #34d399;
         }
-
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -377,7 +366,7 @@
             <span>🔍 DesCrapper</span>
             <button class="settings-toggle" id="settingsToggle">⚙️ Settings</button>
         </h1>
-        <div class="subtitle">Fetch any webpage (even JavaScript‑rendered) via your secure Worker, extract structured data, and enhance with AI.</div>
+        <div class="subtitle">Fetch any webpage (including Workday) via your secure Worker, extract structured data, and enhance with AI.</div>
 
         <!-- Settings Panel -->
         <div class="settings-panel" id="settingsPanel">
@@ -401,7 +390,7 @@
         <!-- Input Row -->
         <div class="input-row">
             <label for="urlInput">🌐 URL</label>
-            <input type="url" id="urlInput" placeholder="https://example.com" value="https://lseg.wd3.myworkdayjobs.com/en-US/Careers/job/IND-Hyderabad-CapitaLand/Senior-QA-Engineer-Python-with-Jmeter-_R0116074" />
+            <input type="url" id="urlInput" placeholder="https://example.com" value="https://lseg.wd3.myworkdayjobs.com/en-US/Careers/job/Senior-Software-Engineer--Java-_R0116644" />
             <button id="fetchBtn">🚀 Fetch & Extract</button>
             <span class="status" id="statusMsg">Ready</span>
         </div>
@@ -541,7 +530,7 @@
             settingsToggle.addEventListener('click', () => {
                 settingsPanel.classList.toggle('open');
                 settingsToggle.textContent = settingsPanel.classList.contains('open') ? '⚙️ Close settings' :
-                '⚙️ Settings';
+                    '⚙️ Settings';
             });
 
             // ── tabs ──
@@ -614,7 +603,7 @@
                         });
                         if (!response.ok) {
                             const errorText = await response.text();
-                            throw new Error(`HTTP ${response.status}: ${errorText.slice(0,200)}`);
+                            throw new Error(`HTTP ${response.status}: ${errorText.slice(0, 200)}`);
                         }
                         let rawText = await response.text();
                         if (rawText.charCodeAt(0) === 0xFEFF) rawText = rawText.slice(1);
@@ -657,7 +646,7 @@
                 if (lower.includes('summary') || lower.includes('overview')) {
                     return `This page appears to be about ${keywordList}. It contains information relevant to these topics.`;
                 } else if (lower.includes('json')) {
-                    return `{"title": "Sample Title", "description": "This is a fallback description", "keywords": ["${keywords.slice(0,3).join('", "')}"]}`;
+                    return `{"title": "Sample Title", "description": "This is a fallback description", "keywords": ["${keywords.slice(0, 3).join('", "')}"]}`;
                 } else {
                     return `Generated analysis using keywords: ${keywordList}. Please refine with specific prompts.`;
                 }
@@ -718,7 +707,6 @@
                     } catch (_) {}
                     throw new Error(errorMsg);
                 }
-                // The worker returns the HTML directly
                 const html = await response.text();
                 if (html.length < 100) {
                     throw new Error('Worker returned empty or very short response');
@@ -726,70 +714,156 @@
                 return html;
             }
 
-            // ─── Enhanced local extraction with JSON‑LD ──────────────────────
+            // ─── ENHANCED EXTRACTION WITH JSON-LD ────────────────────────────
             function extractLocal(html, baseUrl) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
 
-                // 1. Try JSON‑LD JobPosting
+                // ─── 1. LOOK FOR JSON-LD JOB POSTING ───
                 let jobData = null;
                 const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
                 for (let script of scripts) {
                     try {
                         const json = JSON.parse(script.textContent);
-                        let items = Array.isArray(json) ? json : [json];
-                        for (let item of items) {
-                            if (item['@type'] === 'JobPosting' ||
-                                (Array.isArray(item['@type']) && item['@type'].includes('JobPosting'))) {
-                                jobData = item;
-                                break;
+                        if (json['@type'] === 'JobPosting' ||
+                            (Array.isArray(json['@type']) && json['@type'].includes('JobPosting'))) {
+                            jobData = json;
+                            break;
+                        }
+                        if (json['@graph']) {
+                            for (const item of json['@graph']) {
+                                if (item['@type'] === 'JobPosting') {
+                                    jobData = item;
+                                    break;
+                                }
                             }
                         }
-                        if (jobData) break;
                     } catch (e) { /* ignore */ }
                 }
 
-                let title = '',
-                    description = '',
-                    hiringOrg = '',
-                    jobLocation = '',
-                    employmentType = '',
-                    datePosted = '';
-
+                // ─── 2. IF JSON-LD FOUND, EXTRACT ALL FIELDS ───
                 if (jobData) {
-                    title = jobData.title || '';
-                    description = jobData.description || '';
-                    if (jobData.hiringOrganization) {
-                        hiringOrg = typeof jobData.hiringOrganization === 'string' ? jobData.hiringOrganization :
-                            jobData.hiringOrganization.name || '';
+                    console.log('✅ Found JobPosting JSON-LD');
+
+                    let description = jobData.description || '';
+                    if (description && description.includes('<')) {
+                        const div = document.createElement('div');
+                        div.innerHTML = description;
+                        description = div.textContent || description;
                     }
+
+                    let jobLocation = '';
                     if (jobData.jobLocation) {
-                        const loc = jobData.jobLocation;
-                        if (typeof loc === 'string') jobLocation = loc;
-                        else if (loc.address) {
-                            jobLocation = loc.address.addressLocality || loc.address.addressRegion || loc.address
-                                .addressCountry || '';
+                        if (typeof jobData.jobLocation === 'string') {
+                            jobLocation = jobData.jobLocation;
+                        } else if (jobData.jobLocation.address) {
+                            const addr = jobData.jobLocation.address;
+                            jobLocation = [
+                                addr.addressLocality || '',
+                                addr.addressRegion || '',
+                                addr.addressCountry || ''
+                            ].filter(Boolean).join(', ');
                         }
                     }
-                    employmentType = jobData.employmentType || '';
-                    datePosted = jobData.datePosted || '';
+
+                    let hiringOrg = '';
+                    if (jobData.hiringOrganization) {
+                        if (typeof jobData.hiringOrganization === 'string') {
+                            hiringOrg = jobData.hiringOrganization;
+                        } else if (jobData.hiringOrganization.name) {
+                            hiringOrg = jobData.hiringOrganization.name;
+                        }
+                    }
+
+                    let employmentType = jobData.employmentType || '';
+                    if (Array.isArray(employmentType)) {
+                        employmentType = employmentType.join(', ');
+                    }
+
+                    let datePosted = jobData.datePosted || '';
+                    if (datePosted) {
+                        try {
+                            const d = new Date(datePosted);
+                            if (!isNaN(d)) {
+                                datePosted = d.toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                            }
+                        } catch (_) {}
+                    }
+
+                    let keywords = jobData.keywords || '';
+                    if (Array.isArray(keywords)) {
+                        keywords = keywords.join(', ');
+                    }
+                    if (!keywords && jobData.title) {
+                        keywords = jobData.title.split(' ')
+                            .filter(w => w.length > 2)
+                            .slice(0, 8)
+                            .join(', ');
+                    }
+
+                    let mainContent = description.slice(0, 800);
+
+                    let summary = '';
+                    if (description) {
+                        const sentences = description.match(/[^.!?]+[.!?]+/g);
+                        if (sentences && sentences.length > 0) {
+                            summary = sentences[0].trim();
+                        } else {
+                            summary = description.slice(0, 150);
+                        }
+                    }
+
+                    return {
+                        url: baseUrl,
+                        title: jobData.title || '',
+                        description: description || '',
+                        keywords: keywords || '',
+                        h1: jobData.title || '',
+                        ogTitle: jobData.title || '',
+                        ogDescription: description.slice(0, 200) || '',
+                        ogImage: jobData.image || '',
+                        linksCount: 0,
+                        imagesCount: 0,
+                        sampleLinks: [],
+                        sampleImages: [],
+                        htmlSize: html.length,
+                        hiringOrganization: hiringOrg,
+                        jobLocation: jobLocation,
+                        employmentType: employmentType,
+                        datePosted: datePosted || '',
+                        author: hiringOrg || '',
+                        publishedDate: jobData.datePosted || '',
+                        mainContent: mainContent || '',
+                        summary: summary || '',
+                        jobId: jobData.identifier || '',
+                        workHours: jobData.workHours || '',
+                        educationRequirements: jobData.educationRequirements || '',
+                        experienceRequirements: jobData.experienceRequirements || '',
+                        responsibilities: jobData.responsibilities || '',
+                        skills: jobData.skills || '',
+                        salary: jobData.salary || '',
+                        benefits: jobData.benefits || '',
+                        industry: jobData.industry || '',
+                        qualifications: jobData.qualifications || '',
+                    };
                 }
 
-                // Fallback to standard meta
-                if (!title) {
-                    title = doc.querySelector('title')?.textContent?.trim() || '';
-                }
-                if (!description) {
-                    const metaDesc = doc.querySelector('meta[name="description"]');
-                    if (metaDesc) description = metaDesc.getAttribute('content')?.trim() || '';
-                }
+                // ─── 3. FALLBACK: Traditional extraction ───
+                console.log('⚠️ No JSON-LD found, using fallback extraction');
+
+                const title = doc.querySelector('title')?.textContent?.trim() || '';
+                let description = '';
+                const metaDesc = doc.querySelector('meta[name="description"]');
+                if (metaDesc) description = metaDesc.getAttribute('content')?.trim() || '';
                 const keywords = doc.querySelector('meta[name="keywords"]')?.getAttribute('content')?.trim() || '';
                 const h1 = doc.querySelector('h1')?.textContent?.trim() || '';
                 const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
                 const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() || '';
                 const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() || '';
-
-                // Links & images
                 const links = Array.from(doc.querySelectorAll('a[href]'))
                     .map(a => a.getAttribute('href'))
                     .filter(h => h && !h.startsWith('javascript:'))
@@ -799,31 +873,28 @@
                     .filter(src => src)
                     .slice(0, 30);
 
-                // Strip HTML from description
-                if (description && description.includes('<')) {
-                    const div = document.createElement('div');
-                    div.innerHTML = description;
-                    description = div.textContent || description;
-                }
-
                 return {
                     url: baseUrl,
-                    title: title || '',
-                    description: description || '',
-                    keywords: keywords || '',
-                    h1: h1 || '',
-                    ogTitle: ogTitle || '',
-                    ogDescription: ogDesc || '',
-                    ogImage: ogImage || '',
+                    title,
+                    description,
+                    keywords,
+                    h1,
+                    ogTitle,
+                    ogDescription: ogDesc,
+                    ogImage,
                     linksCount: links.length,
                     imagesCount: images.length,
                     sampleLinks: links.slice(0, 10),
                     sampleImages: images.slice(0, 10),
                     htmlSize: html.length,
-                    hiringOrganization: hiringOrg,
-                    jobLocation: jobLocation,
-                    employmentType: employmentType,
-                    datePosted: datePosted,
+                    hiringOrganization: '',
+                    jobLocation: '',
+                    employmentType: '',
+                    datePosted: '',
+                    author: '',
+                    publishedDate: '',
+                    mainContent: description.slice(0, 800),
+                    summary: description.slice(0, 150),
                 };
             }
 
@@ -895,16 +966,13 @@
                 addLog(`Fetching: ${url}`, 'info');
 
                 try {
-                    // 1. Get HTML via your Worker
                     const html = await fetchViaWorker(url, workerEndpoint);
                     embedIframe.srcdoc = html;
 
-                    // 2. Local extraction (includes JSON‑LD)
                     const localData = extractLocal(html, url);
                     addLog(`Local extraction: title="${localData.title}", description length=${localData.description.length}`,
                         'info');
 
-                    // 3. AI enhancement
                     let finalData = localData;
                     let usedAI = false;
                     const textToAnalyze = localData.description || localData.title || '';
@@ -922,7 +990,6 @@
                         }
                     }
 
-                    // 4. Render
                     renderData(finalData);
                     dataSourceBadge.textContent = usedAI ? 'Worker + AI' : 'Worker';
                     statusMsg.textContent = '✅ Done';
