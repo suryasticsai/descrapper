@@ -209,23 +209,17 @@
         /* ── Card Grid for Chunks ── */
         .chunk-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 0.8rem;
         }
-        @media (max-width: 600px) { .chunk-grid { grid-template-columns: 1fr; } }
         
         .chunk-card {
-            padding: 0.8rem 1rem;
+            padding: 1rem 1.2rem;
             background: #f8fafc;
             border-radius: 8px;
             border: 2px solid #e2e8f0;
             cursor: pointer;
             transition: all 0.2s;
-            position: relative;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            max-height: 200px;
-            overflow: hidden;
             position: relative;
         }
         .chunk-card:hover {
@@ -240,15 +234,17 @@
             box-shadow: 0 0 0 3px rgba(74,108,247,0.2);
         }
         .chunk-card .chunk-label {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
             color: #6b7280;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: 0.5px;
             margin-bottom: 0.3rem;
         }
         .chunk-card .chunk-text {
             color: #1a1a2e;
+            font-size: 0.9rem;
+            line-height: 1.6;
         }
         .chunk-card .chunk-check {
             position: absolute;
@@ -260,18 +256,6 @@
         }
         .chunk-card.selected .chunk-check {
             display: block;
-        }
-        .chunk-card .chunk-overflow {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(transparent, #f8fafc);
-            pointer-events: none;
-        }
-        .chunk-card.selected .chunk-overflow {
-            background: linear-gradient(transparent, #dbeafe);
         }
         
         /* ── Buttons ── */
@@ -445,6 +429,24 @@
         }
         .toast .toast-title { font-weight: 700; margin-bottom: 0.3rem; }
         .toast .toast-message { font-size: 0.85rem; color: #94a3b8; }
+        
+        .extracted-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-left: 4px solid #10b981;
+        }
+        .extracted-box pre {
+            background: transparent;
+            color: #1a1a2e;
+            padding: 0;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -454,7 +456,7 @@
                 🎯 JobScraper Pro
                 <span>v2.0</span>
             </h1>
-            <p>Extract job descriptions from ANY website. Automatically filters out company fluff using AI.</p>
+            <p>Extract job descriptions from ANY website using HTML structure analysis</p>
         </header>
         
         <!-- Input Section -->
@@ -481,7 +483,7 @@
             </div>
             <div class="stat-card">
                 <div class="number" id="chunkCount">0</div>
-                <div class="label">Content Chunks</div>
+                <div class="label">Content Sections</div>
             </div>
         </div>
         
@@ -494,7 +496,9 @@
                     <span class="badge">embedded</span>
                 </div>
                 <div class="panel-body" id="viewerContainer">
-                    <iframe id="embedIframe" srcdoc="<html><body style='font-family:sans-serif;color:#94a3b8;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;'>Enter a URL and click Scrape</body></html>"></iframe>
+                    <div style="height:550px; display:flex; align-items:center; justify-content:center; background:#f8fafc; color:#94a3b8; font-style:italic; border-radius:8px;">
+                        Enter a URL and click Scrape
+                    </div>
                 </div>
             </div>
             
@@ -506,14 +510,14 @@
                 </div>
                 <div class="panel-body">
                     <div class="tabs">
-                        <button class="active" data-tab="chunks">📋 Smart Chunks</button>
+                        <button class="active" data-tab="chunks">📋 Sections</button>
                         <button data-tab="json">📄 JSON</button>
-                        <button data-tab="raw">📝 Raw</button>
+                        <button data-tab="raw">📝 Raw HTML</button>
                     </div>
                     
                     <div id="tabChunks" class="tab-content active">
                         <div id="chunksContainer">
-                            <div class="empty-state">No content yet. Scrape a job to see chunks.</div>
+                            <div class="empty-state">No content yet. Scrape a job to see sections.</div>
                         </div>
                         <div class="action-bar" id="actionBar" style="display:none;">
                             <button class="btn-success" id="selectAllBtn">✅ Select All</button>
@@ -521,12 +525,14 @@
                             <button class="btn-primary" id="extractSelectedBtn">🎯 Extract Selected</button>
                             <button class="btn-danger" id="clearSelectionBtn">🗑️ Clear</button>
                         </div>
-                        <div id="extractedResult" style="margin-top:1rem; display:none;">
-                            <div class="panel-header" style="background:#d1fae5; border-radius:8px; padding:0.5rem 1rem; margin-bottom:0.5rem;">
-                                <span>✅ Extracted Job Description</span>
-                                <button class="btn-secondary" style="padding:0.2rem 0.8rem; font-size:0.7rem;" id="copyResultBtn">📄 Copy</button>
+                        <div id="extractedResult" style="display:none;">
+                            <div class="extracted-box">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                    <strong style="color:#065f46;">✅ Extracted Job Description</strong>
+                                    <button class="btn-secondary" style="padding:0.2rem 0.8rem; font-size:0.7rem;" id="copyResultBtn">📄 Copy</button>
+                                </div>
+                                <pre id="extractedText"></pre>
                             </div>
-                            <pre id="extractedText" style="background:#f1f5f9; color:#1a1a2e; padding:1rem; border-radius:8px; font-size:0.85rem; white-space:pre-wrap; max-height:300px; overflow-y:auto;"></pre>
                         </div>
                     </div>
                     
@@ -575,7 +581,7 @@
             const urlInput = document.getElementById('urlInput');
             const fetchBtn = document.getElementById('fetchBtn');
             const statusBadge = document.getElementById('statusBadge');
-            const embedIframe = document.getElementById('embedIframe');
+            const viewerContainer = document.getElementById('viewerContainer');
             const jsonOutput = document.getElementById('jsonOutput');
             const rawOutput = document.getElementById('rawOutput');
             const chunksContainer = document.getElementById('chunksContainer');
@@ -688,338 +694,252 @@
                 if (type) statusBadge.classList.add(type);
             }
             
-            // ─── CLEANING UTILITIES ──────────────────────────────────────────────
+            // ─── HTML-BASED SECTION EXTRACTION ─────────────────────────────────
             
-            // Common company fluff phrases to remove
-            const FLUFF_PATTERNS = [
-                /about us/i,
-                /our culture/i,
-                /our values/i,
-                /diversity and inclusion/i,
-                /equal opportunity/i,
-                /we are an equal opportunity employer/i,
-                /we are committed to/i,
-                /we believe in/i,
-                /we strive to/i,
-                /our mission/i,
-                /our vision/i,
-                /our purpose/i,
-                /our commitment/i,
-                /we offer/i,
-                /benefits include/i,
-                /perks and benefits/i,
-                /why join us/i,
-                /life at .{1,30}company/i,
-                /join our team/i,
-                /come join us/i,
-                /we are looking for/i,
-                /if you are passionate/i,
-                /apply now/i,
-                /how to apply/i,
-                /submit your resume/i,
-                /send your cv/i,
-                /please apply/i,
-                /click here to apply/i,
-                /we are hiring/i,
-                /our team is growing/i,
-                /we\'re obsessed with/i,
-                /your work days are brighter here/i,
-                /we\'re shaping the future/i,
-                /our culture is rooted in/i,
-                /we look for curious minds/i,
-                /you\'ll feel it/i,
-                /not just in the products/i,
-                /we\'re in this together/i,
-                /we\'ll give you/i,
-                /so, if you want/i,
-                /you\'ve found a match/i,
-                /we hope to be a match/i,
-                /pursuant to applicable/i,
-                /workday pay transparency/i,
-                /annualized base salary/i,
-                /for more information regarding/i,
-                /our approach to flexible work/i,
-                /with flex work/i,
-                /we\'re combining the best/i,
-                /this means you\'ll have/i,
-                /pursuant to applicable fair chance/i,
-                /workday is an equal opportunity/i,
-                /if you require assistance/i,
-                /are you being referred/i,
-                /at workday, we value/i,
-                /workday will never ask/i,
-                /please be aware/i,
-                /in addition, workday will never ask/i,
-                /join our talent community/i,
-                /stay connected with workday/i,
-                /get the latest news/i,
-                /be first to hear/i,
-                /never miss an opportunity/i,
-                /career site/i,
-                /inclusion and belonging/i,
-                /application and interview tips/i,
-                /early careers/i,
-                /internships/i,
-                /contractor job site/i,
-                /engineering, but brighter/i,
-                /sales, but brighter/i,
-                /cx & consulting, but brighter/i,
-                /visit our career site here/i,
-                /read more below/i,
-                /we do not accept resumes/i,
-                /you may view/i,
-                /workday is committed/i,
-                /we are an equal opportunity employer/i,
-                /we are proud to be an equal opportunity workplace/i,
-                /individuals seeking employment/i,
-                /further, pursuant to/i,
-                /workday will consider for employment/i,
-                /we do not accept resumes from headhunters/i,
-                /for more information regarding workday's comprehensive benefits/i,
-                /primary location base pay range/i,
-                /additional us location/i,
-                /flex work/i,
-                /flexible work/i,
-                /remote work/i,
-                /hybrid work/i,
-                /open to 50% reporting/i,
-                /tel: /i,
-                /fax: /i,
-                /email: /i,
-                /phone: /i,
-                /© 20\d{2}/i,
-                /all rights reserved/i,
-                /privacy policy/i,
-                /terms of use/i,
-                /cookie policy/i,
-                /legal notice/i,
-                /accessibility/i,
-                /workday, inc\./i,
-                /lseg/i,
-                /london stock exchange/i,
-                /refinitiv/i,
-                /©/i,
-                /®/i,
-                /™/i
-            ];
+            // Keywords that indicate job description sections
+            const SECTION_KEYWORDS = {
+                'job_description': ['job description', 'role description', 'position description', 'about the role', 'about this role', 'the role'],
+                'responsibilities': ['responsibilities', 'what you\'ll do', 'what you will do', 'key responsibilities', 'role responsibilities', 'duties', 'what you\'ll be doing'],
+                'requirements': ['requirements', 'qualifications', 'what you\'ll bring', 'what you will bring', 'skills', 'experience', 'must have', 'nice to have', 'preferred qualifications'],
+                'about_us': ['about us', 'about the company', 'who we are', 'our culture', 'our values', 'why join us'],
+                'benefits': ['benefits', 'perks', 'what we offer', 'compensation', 'salary', 'pay range']
+            };
             
-            function isFluff(text) {
-                if (!text || text.length < 5) return true;
-                // Check if text matches any fluff pattern
-                for (const pattern of FLUFF_PATTERNS) {
-                    if (pattern.test(text)) return true;
+            function getSectionType(text) {
+                const lower = text.toLowerCase();
+                for (const [type, keywords] of Object.entries(SECTION_KEYWORDS)) {
+                    for (const keyword of keywords) {
+                        if (lower.includes(keyword)) return type;
+                    }
                 }
-                // Check if text contains mostly URLs, copyright, or legal text
-                const urlCount = (text.match(/https?:\/\/[^\s]+/g) || []).length;
-                const legalWords = ['copyright', 'trademark', 'registered', 'reserved', 'policy', 'terms', 'privacy', 'legal', 'notice', 'disclaimer', 'equal opportunity', 'diversity', 'inclusion'];
-                let legalCount = 0;
-                for (const word of legalWords) {
-                    if (text.toLowerCase().includes(word)) legalCount++;
+                return 'unknown';
+            }
+            
+            function extractSectionsFromHTML(html) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const sections = [];
+                
+                // 1. Find all heading elements
+                const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6, strong, b, [class*="heading"], [class*="title"]');
+                const headingTexts = new Set();
+                headings.forEach(el => {
+                    const text = el.textContent.trim();
+                    if (text && text.length > 3 && text.length < 200) {
+                        headingTexts.add(text);
+                    }
+                });
+                
+                // 2. Find all div/paragraph containers with potential content
+                const contentSelectors = [
+                    'div[data-automation-id="jobPostingDescription"]',
+                    'div[data-automation-id="job-posting-details"]',
+                    '.job-description',
+                    '#job-description',
+                    '.description',
+                    '.job-details',
+                    '.posting-description',
+                    '.content',
+                    'article',
+                    '.jd-description',
+                    '[class*="description"]',
+                    '[class*="details"]',
+                    '[class*="content"]'
+                ];
+                
+                let mainContent = null;
+                for (const selector of contentSelectors) {
+                    const el = doc.querySelector(selector);
+                    if (el && el.textContent.trim().length > 100) {
+                        mainContent = el;
+                        break;
+                    }
                 }
-                if (urlCount > 2 || legalCount > 3) return true;
+                
+                if (mainContent) {
+                    // Extract sections from main content
+                    const children = mainContent.children;
+                    let currentSection = { type: 'unknown', heading: '', content: '' };
+                    
+                    for (const child of children) {
+                        const tag = child.tagName.toLowerCase();
+                        const text = child.textContent.trim();
+                        
+                        if (!text || text.length < 3) continue;
+                        
+                        // Check if this is a heading
+                        const isHeading = ['h1','h2','h3','h4','h5','h6','b','strong'].includes(tag) || 
+                                         child.className.includes('heading') || 
+                                         child.className.includes('title') ||
+                                         child.className.includes('label') ||
+                                         headingTexts.has(text);
+                        
+                        if (isHeading && text.length < 200) {
+                            // Save previous section if it has content
+                            if (currentSection.content.length > 20) {
+                                const sectionType = getSectionType(currentSection.heading + ' ' + currentSection.content);
+                                sections.push({
+                                    heading: currentSection.heading,
+                                    content: currentSection.content.trim(),
+                                    type: sectionType
+                                });
+                            }
+                            currentSection = { type: 'unknown', heading: text, content: '' };
+                        } else {
+                            // Check for keyword separators like ":", "-", or newlines
+                            const lines = text.split(/\n+/);
+                            for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (!trimmed) continue;
+                                
+                                // Check if line contains a separator and might be a sub-heading
+                                if ((trimmed.includes(':') || trimmed.includes('-') || trimmed.includes('—')) && trimmed.length < 100) {
+                                    const parts = trimmed.split(/[:—\-]\s*/);
+                                    const possibleHeading = parts[0].trim();
+                                    if (possibleHeading.length > 2 && possibleHeading.length < 80) {
+                                        // Save previous section
+                                        if (currentSection.content.length > 20) {
+                                            const sectionType = getSectionType(currentSection.heading + ' ' + currentSection.content);
+                                            sections.push({
+                                                heading: currentSection.heading,
+                                                content: currentSection.content.trim(),
+                                                type: sectionType
+                                            });
+                                        }
+                                        currentSection = { 
+                                            type: 'unknown', 
+                                            heading: possibleHeading, 
+                                            content: parts.slice(1).join(' ') || '' 
+                                        };
+                                        continue;
+                                    }
+                                }
+                                
+                                // Append to current section
+                                if (currentSection.content) {
+                                    currentSection.content += '\n' + trimmed;
+                                } else {
+                                    currentSection.content = trimmed;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Save the last section
+                    if (currentSection.content.length > 20) {
+                        const sectionType = getSectionType(currentSection.heading + ' ' + currentSection.content);
+                        sections.push({
+                            heading: currentSection.heading,
+                            content: currentSection.content.trim(),
+                            type: sectionType
+                        });
+                    }
+                }
+                
+                // 3. If we didn't find sections, fallback to JSON-LD or meta
+                if (sections.length === 0) {
+                    // Try JSON-LD
+                    const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+                    for (let script of scripts) {
+                        try {
+                            const json = JSON.parse(script.textContent);
+                            if (json['@type'] === 'JobPosting' || 
+                                (Array.isArray(json['@type']) && json['@type'].includes('JobPosting'))) {
+                                let desc = json.description || '';
+                                if (desc && desc.includes('<')) {
+                                    const div = document.createElement('div');
+                                    div.innerHTML = desc;
+                                    desc = div.textContent || desc;
+                                }
+                                if (desc.length > 100) {
+                                    sections.push({
+                                        heading: 'Job Description',
+                                        content: desc.trim(),
+                                        type: 'job_description'
+                                    });
+                                }
+                                break;
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
+                }
+                
+                // 4. If still no sections, use body text
+                if (sections.length === 0) {
+                    const bodyText = doc.body?.textContent || '';
+                    if (bodyText.length > 200) {
+                        sections.push({
+                            heading: 'Page Content',
+                            content: bodyText.trim(),
+                            type: 'unknown'
+                        });
+                    }
+                }
+                
+                return sections;
+            }
+            
+            // ─── DETECT CLOSED JOB ──────────────────────────────────────────────
+            
+            function isJobClosed(html) {
+                const lower = html.toLowerCase();
+                const closedIndicators = [
+                    'this job is no longer available',
+                    'job has been closed',
+                    'position filled',
+                    'no longer accepting applications',
+                    'this position has been filled',
+                    'job is not active',
+                    'job posting has expired',
+                    'this requisition has been filled',
+                    'application deadline passed',
+                    'this role is no longer available',
+                    'we are no longer accepting applications'
+                ];
+                for (const indicator of closedIndicators) {
+                    if (lower.includes(indicator)) return true;
+                }
                 return false;
             }
             
-            // ─── SMART CHUNKING ──────────────────────────────────────────────────
+            // ─── EXTRACT JOB INFO ──────────────────────────────────────────────
             
-            function smartChunk(text, minChunkSize = 50, maxChunkSize = 500) {
-                if (!text || text.length < 10) return [];
-                
-                // Split by common delimiters
-                const delimiters = [
-                    /\n\s*\n/, // double newline
-                    /\n/, // single newline
-                    /\.\s+/, // period
-                    /\?+\s+/, // question mark
-                    /\!+\s+/, // exclamation
-                    /\;\s+/, // semicolon
-                    /\:\s+/, // colon
-                    /,\s+/, // comma
-                    /[\n\r]+/, // any newline
-                ];
-                
-                let chunks = [];
-                let current = '';
-                let lines = text.split(/\n+/);
-                
-                // First pass: group by paragraphs
-                for (let line of lines) {
-                    line = line.trim();
-                    if (!line) continue;
-                    
-                    // Check if line is fluff
-                    if (isFluff(line)) continue;
-                    
-                    if (line.length > maxChunkSize) {
-                        // Split long lines
-                        const subChunks = line.match(new RegExp(`.{1,${maxChunkSize}}`, 'g')) || [];
-                        for (const sub of subChunks) {
-                            if (sub.length > minChunkSize && !isFluff(sub)) {
-                                chunks.push(sub.trim());
-                            }
-                        }
-                    } else {
-                        if (current.length + line.length < maxChunkSize) {
-                            current += (current ? ' ' : '') + line;
-                        } else {
-                            if (current.length > minChunkSize) {
-                                chunks.push(current.trim());
-                            }
-                            current = line;
-                        }
-                    }
-                }
-                if (current.length > minChunkSize) {
-                    chunks.push(current.trim());
-                }
-                
-                // Second pass: filter and clean
-                chunks = chunks.filter(c => c.length > minChunkSize && !isFluff(c));
-                
-                // Remove duplicates (close matches)
-                const unique = [];
-                for (const chunk of chunks) {
-                    let isDuplicate = false;
-                    for (const existing of unique) {
-                        if (chunk.includes(existing) || existing.includes(chunk)) {
-                            if (chunk.length > existing.length) {
-                                // Replace shorter with longer
-                                const idx = unique.indexOf(existing);
-                                unique[idx] = chunk;
-                            }
-                            isDuplicate = true;
-                            break;
-                        }
-                    }
-                    if (!isDuplicate) {
-                        unique.push(chunk);
-                    }
-                }
-                
-                return unique;
-            }
-            
-            // ─── EXTRACT JOB DATA FROM VARIOUS SOURCES ──────────────────────────
-            
-            function extractJobData(html, url) {
+            function extractJobInfo(html) {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
+                let title = '', company = '';
                 
-                // Check if job is closed
-                const bodyText = doc.body?.textContent || '';
-                if (bodyText.includes('This job is no longer available') || 
-                    bodyText.includes('Job has been closed') ||
-                    bodyText.includes('Position filled') ||
-                    bodyText.includes('No longer accepting applications') ||
-                    bodyText.includes('This position has been filled') ||
-                    bodyText.includes('Job is not active') ||
-                    bodyText.includes('Job posting has expired')) {
-                    return { status: 'closed', message: 'This job is no longer available or has been closed.' };
-                }
-                
-                // Try JSON-LD
-                let jobData = null;
+                // Try JSON-LD first
                 const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
                 for (let script of scripts) {
                     try {
                         const json = JSON.parse(script.textContent);
-                        if (json['@type'] === 'JobPosting' ||
+                        if (json['@type'] === 'JobPosting' || 
                             (Array.isArray(json['@type']) && json['@type'].includes('JobPosting'))) {
-                            jobData = json;
-                            break;
-                        }
-                        if (json['@graph']) {
-                            for (const item of json['@graph']) {
-                                if (item['@type'] === 'JobPosting') {
-                                    jobData = item;
-                                    break;
-                                }
+                            title = json.title || title;
+                            if (json.hiringOrganization) {
+                                company = typeof json.hiringOrganization === 'string' ? 
+                                    json.hiringOrganization : 
+                                    (json.hiringOrganization.name || company);
                             }
+                            break;
                         }
                     } catch (e) { /* ignore */ }
                 }
                 
-                if (jobData) {
-                    let description = jobData.description || '';
-                    if (description && description.includes('<')) {
-                        const div = document.createElement('div');
-                        div.innerHTML = description;
-                        description = div.textContent || description;
-                    }
-                    
-                    let location = '';
-                    if (jobData.jobLocation) {
-                        if (typeof jobData.jobLocation === 'string') {
-                            location = jobData.jobLocation;
-                        } else if (jobData.jobLocation.address) {
-                            const addr = jobData.jobLocation.address;
-                            location = [
-                                addr.addressLocality || '',
-                                addr.addressRegion || '',
-                                addr.addressCountry || ''
-                            ].filter(Boolean).join(', ');
-                        }
-                    }
-                    
-                    let company = '';
-                    if (jobData.hiringOrganization) {
-                        if (typeof jobData.hiringOrganization === 'string') {
-                            company = jobData.hiringOrganization;
-                        } else if (jobData.hiringOrganization.name) {
-                            company = jobData.hiringOrganization.name;
-                        }
-                    }
-                    
-                    let employmentType = jobData.employmentType || '';
-                    if (Array.isArray(employmentType)) {
-                        employmentType = employmentType.join(', ');
-                    }
-                    
-                    let postedDate = jobData.datePosted || '';
-                    if (postedDate) {
-                        try {
-                            const d = new Date(postedDate);
-                            if (!isNaN(d)) {
-                                postedDate = d.toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                });
-                            }
-                        } catch (_) {}
-                    }
-                    
-                    return {
-                        status: 'success',
-                        title: jobData.title || '',
-                        description: description || '',
-                        company: company || '',
-                        location: location || '',
-                        employmentType: employmentType || '',
-                        postedDate: postedDate || '',
-                        raw: jobData,
-                        source: 'JSON-LD'
-                    };
+                // Fallback to meta tags
+                if (!title) {
+                    title = doc.querySelector('title')?.textContent?.trim() || '';
+                    const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
+                    if (ogTitle && ogTitle.length > title.length) title = ogTitle;
                 }
                 
-                // Fallback: extract from meta tags
-                const title = doc.querySelector('title')?.textContent?.trim() || 
-                              doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() || '';
-                const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
-                const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() || '';
-                const description = metaDesc || ogDesc || '';
+                if (!company) {
+                    const ogSite = doc.querySelector('meta[property="og:site_name"]')?.getAttribute('content')?.trim() || '';
+                    if (ogSite) company = ogSite;
+                }
                 
-                return {
-                    status: 'success',
-                    title: title,
-                    description: description,
-                    company: '',
-                    location: '',
-                    employmentType: '',
-                    postedDate: '',
-                    raw: html,
-                    source: 'Meta Tags'
-                };
+                return { title, company };
             }
             
             // ─── FETCH AND EXTRACT ──────────────────────────────────────────────
@@ -1039,16 +959,19 @@
                     // Fetch HTML via proxy
                     const proxyUrls = [
                         `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                        `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+                        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+                        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
                     ];
                     
                     let html = null;
+                    let usedProxy = '';
                     for (const proxyUrl of proxyUrls) {
                         try {
                             const response = await fetch(proxyUrl);
                             if (response.ok) {
                                 html = await response.text();
-                                addLog(`✅ Fetched ${html.length} bytes via proxy`, 'success');
+                                usedProxy = proxyUrl.split('?')[0].replace(/https?:\/\//, '').split('/')[0];
+                                addLog(`✅ Fetched ${html.length} bytes via ${usedProxy}`, 'success');
                                 break;
                             }
                         } catch (e) {
@@ -1060,50 +983,55 @@
                         throw new Error('Could not fetch the page content. The page may be blocked or inaccessible.');
                     }
                     
-                    embedIframe.srcdoc = html;
+                    // Show preview in iframe
+                    viewerContainer.innerHTML = `<iframe srcdoc="${escapeHtml(html).replace(/"/g, '&quot;')}" style="width:100%;height:550px;border:none;border-radius:8px;background:#fff;"></iframe>`;
                     
-                    // Extract job data
-                    const result = extractJobData(html, url);
-                    
-                    if (result.status === 'closed') {
+                    // Check if job is closed
+                    if (isJobClosed(html)) {
                         setStatus('Closed', 'closed');
                         jobStatus.textContent = '🚫 Closed';
                         jobStatus.style.color = '#ef4444';
-                        addLog(`🚫 ${result.message}`, 'closed');
-                        showToast('Job Closed', result.message, 'error');
+                        addLog(`🚫 This job is no longer available or has been closed.`, 'closed');
+                        showToast('Job Closed', 'This position is no longer available.', 'error');
+                        fetchBtn.disabled = false;
                         return;
                     }
                     
-                    // Update stats
-                    jobTitle.textContent = result.title || 'Unknown';
-                    jobCompany.textContent = result.company || 'Unknown';
+                    // Extract job info
+                    const jobInfo = extractJobInfo(html);
+                    jobTitle.textContent = jobInfo.title || 'Unknown';
+                    jobCompany.textContent = jobInfo.company || 'Unknown';
                     jobStatus.textContent = '✅ Active';
                     jobStatus.style.color = '#10b981';
-                    dataSource.textContent = result.source || 'Extracted';
                     
-                    // Smart chunk the description
-                    const description = result.description || '';
-                    const allText = [result.title, result.company, description].filter(Boolean).join('\n\n');
-                    const chunks = smartChunk(allText);
+                    // Extract sections from HTML
+                    addLog('🔍 Analyzing HTML structure to extract sections...', 'info');
+                    const sections = extractSectionsFromHTML(html);
                     
-                    currentChunks = chunks;
+                    if (sections.length === 0) {
+                        addLog('⚠️ No sections found in the page.', 'warn');
+                        chunksContainer.innerHTML = `<div class="empty-state">No content sections found. The page may not contain a job description or uses a format we don't support yet.</div>`;
+                        actionBar.style.display = 'none';
+                        fetchBtn.disabled = false;
+                        return;
+                    }
+                    
+                    // Display sections as chunks
+                    currentChunks = sections;
                     selectedChunks = new Set();
-                    chunkCount.textContent = chunks.length;
+                    chunkCount.textContent = sections.length;
+                    dataSource.textContent = `HTML Structure (${sections.length} sections)`;
                     
-                    // Render chunks as cards
-                    renderChunks(chunks);
-                    
-                    // Update JSON
-                    jsonOutput.textContent = JSON.stringify(result, null, 2);
+                    renderChunks(sections);
+                    jsonOutput.textContent = JSON.stringify({ jobInfo, sections }, null, 2);
                     rawOutput.textContent = html.slice(0, 5000) + (html.length > 5000 ? '\n... (truncated)' : '');
                     
-                    // Show action bar
                     actionBar.style.display = 'flex';
                     extractedResult.style.display = 'none';
                     
                     setStatus('Success', 'success');
-                    addLog(`✅ Extracted ${chunks.length} content chunks`, 'success');
-                    showToast('Success!', `Extracted ${chunks.length} content chunks. Select the ones that are the actual job description.`);
+                    addLog(`✅ Extracted ${sections.length} sections from HTML structure`, 'success');
+                    showToast('Success!', `Extracted ${sections.length} sections. Select the ones that are the actual job description.`);
                     
                 } catch (error) {
                     addLog(`❌ Error: ${error.message}`, 'error');
@@ -1117,22 +1045,34 @@
             
             // ─── RENDER CHUNKS ──────────────────────────────────────────────────
             
-            function renderChunks(chunks) {
-                if (!chunks || chunks.length === 0) {
-                    chunksContainer.innerHTML = '<div class="empty-state">No meaningful content chunks found. The page may not contain a job description.</div>';
+            function renderChunks(sections) {
+                if (!sections || sections.length === 0) {
+                    chunksContainer.innerHTML = '<div class="empty-state">No content sections found.</div>';
                     return;
                 }
                 
+                const typeLabels = {
+                    'job_description': '📋 Job Description',
+                    'responsibilities': '📌 Responsibilities',
+                    'requirements': '📋 Requirements',
+                    'about_us': 'ℹ️ About Us',
+                    'benefits': '💰 Benefits',
+                    'unknown': '📄 Content'
+                };
+                
                 let html = '<div class="chunk-grid">';
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunk = chunks[i];
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
                     const isSelected = selectedChunks.has(i);
+                    const label = typeLabels[section.type] || typeLabels.unknown;
+                    const heading = section.heading || `Section ${i+1}`;
+                    const content = section.content || '';
+                    
                     html += `
                         <div class="chunk-card ${isSelected ? 'selected' : ''}" data-index="${i}">
-                            <div class="chunk-label">Chunk ${i + 1}</div>
-                            <div class="chunk-text">${escapeHtml(chunk.slice(0, 300))}${chunk.length > 300 ? '...' : ''}</div>
+                            <div class="chunk-label">${label} — ${escapeHtml(heading)}</div>
+                            <div class="chunk-text">${escapeHtml(content.slice(0, 400))}${content.length > 400 ? '...' : ''}</div>
                             <div class="chunk-check">✓</div>
-                            <div class="chunk-overflow"></div>
                         </div>
                     `;
                 }
@@ -1155,12 +1095,10 @@
             }
             
             function updateSelectionUI() {
-                const count = selectedChunks.size;
                 document.querySelectorAll('.chunk-card').forEach(card => {
                     const index = parseInt(card.dataset.index);
                     card.classList.toggle('selected', selectedChunks.has(index));
                 });
-                // Update button text
                 const selectBtn = document.getElementById('selectAllBtn');
                 if (selectedChunks.size === currentChunks.length) {
                     selectBtn.textContent = '✅ All Selected';
@@ -1173,29 +1111,22 @@
             
             function extractSelected() {
                 if (selectedChunks.size === 0) {
-                    showToast('No Selection', 'Please select at least one content chunk.', 'error');
+                    showToast('No Selection', 'Please select at least one content section.', 'error');
                     return;
                 }
                 
                 const selectedText = Array.from(selectedChunks)
                     .sort((a, b) => a - b)
-                    .map(i => currentChunks[i])
-                    .join('\n\n');
+                    .map(i => {
+                        const section = currentChunks[i];
+                        return `## ${section.heading || 'Section'}\n\n${section.content}`;
+                    })
+                    .join('\n\n---\n\n');
                 
                 extractedText.textContent = selectedText;
                 extractedResult.style.display = 'block';
-                addLog(`✅ Extracted ${selectedChunks.size} selected chunks`, 'success');
-                showToast('Extracted!', `${selectedChunks.size} chunks combined into job description.`);
-                
-                // Try to use RAGina for further enhancement
-                try {
-                    if (window.RAGina && window.RAGina.engine && window.RAGina.engine.isReady) {
-                        addLog('🧠 Using RAGina to enhance the extracted content...', 'info');
-                        // RAGina can be used here for further processing
-                    }
-                } catch (e) {
-                    // RAGina not available
-                }
+                addLog(`✅ Extracted ${selectedChunks.size} selected sections`, 'success');
+                showToast('Extracted!', `${selectedChunks.size} sections combined into job description.`);
             }
             
             // ─── COPY EXTRACTED RESULT ──────────────────────────────────────────
@@ -1206,7 +1137,6 @@
                 navigator.clipboard?.writeText(text).then(() => {
                     showToast('Copied!', 'Job description copied to clipboard.');
                 }).catch(() => {
-                    // Fallback
                     const area = document.createElement('textarea');
                     area.value = text;
                     document.body.appendChild(area);
@@ -1255,13 +1185,10 @@
             // ─── INIT LOG ──────────────────────────────────────────────────────
             
             addLog('🔗 Enter any URL and click Scrape to extract job descriptions.', 'info');
-            addLog('💡 The app will automatically filter out company fluff and let you select the relevant content.', 'info');
+            addLog('💡 The app analyzes HTML structure to find job description sections.', 'info');
             
-            // Check if RAGina is loaded
             if (typeof window.RAGina !== 'undefined') {
                 addLog('🧠 RAGina AI loaded and ready for enhancement.', 'success');
-            } else {
-                addLog('⚠️ RAGina not loaded. Fallback extraction will be used.', 'warn');
             }
             
         })();
