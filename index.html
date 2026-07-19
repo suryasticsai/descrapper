@@ -22,10 +22,13 @@
             padding: 2rem;
             line-height: 1.6;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .container {
             max-width: 1600px;
             margin: 0 auto;
+            flex: 1;
         }
         
         /* ─────────────────── HEADER ─────────────────── */
@@ -55,6 +58,49 @@
         header p {
             color: #a8b2d1;
             margin-top: 0.5rem;
+        }
+        
+        /* ─────────────────── PROGRESS BAR ─────────────────── */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            display: none;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .progress-container.active {
+            display: block;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #dc2626 0px,
+                #dc2626 10px,
+                #ffffff 10px,
+                #ffffff 20px
+            );
+            background-size: 28px 28px;
+            animation: stripe-slide 1.5s linear infinite;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        @keyframes stripe-slide {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 28px 0;
+            }
+        }
+        .progress-bar.done {
+            background: #10b981;
+            animation: none;
+            width: 100%;
         }
         
         /* ─────────────────── INPUT SECTION ─────────────────── */
@@ -477,6 +523,55 @@
         .btn-danger:hover { background: #dc2626; }
         .btn-purple { background: #8b5cf6; color: white; }
         .btn-purple:hover { background: #7c3aed; }
+        
+        /* ─────────────────── FOOTER ─────────────────── */
+        footer {
+            margin-top: 3rem;
+            padding: 2rem 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        footer .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        footer .footer-brand span {
+            color: #4a6cf7;
+        }
+        footer .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        footer .footer-links a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        footer .footer-links a:hover {
+            color: #4a6cf7;
+        }
+        footer .footer-copy {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 600px) {
+            footer {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -485,6 +580,11 @@
             <h1>🎯 JobScraper Pro <span>AI-Powered</span></h1>
             <p>Extract job sections with AI-powered suggestions for resume tailoring</p>
         </header>
+        
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
         
         <div class="input-section">
             <label for="urlInput">🌐 URL</label>
@@ -530,6 +630,22 @@
         </div>
     </div>
     
+    <!-- Footer -->
+    <footer>
+        <div class="footer-brand">
+            🎯 JobScraper <span>Pro</span>
+        </div>
+        <div class="footer-links">
+            <a href="#" onclick="showToast('info','About','AI-powered job scraper with RAGina.')">About</a>
+            <a href="#" onclick="showToast('info','Help','Enter a job URL and click Scrape to extract sections.')">Help</a>
+            <a href="#" onclick="showToast('info','Privacy','We do not store any data.')">Privacy</a>
+            <a href="#" target="_blank">GitHub</a>
+        </div>
+        <div class="footer-copy">
+            &copy; 2026 JobScraper Pro. Built with ❤️
+        </div>
+    </footer>
+    
     <div class="toast" id="toast">
         <div class="toast-title" id="toastTitle">✨ Success</div>
         <div class="toast-message" id="toastMessage">Job description extracted successfully!</div>
@@ -556,6 +672,9 @@
             const copyLogsBtn = document.getElementById('copyLogsBtn');
             const clearLogsBtn = document.getElementById('clearLogsBtn');
             const consoleToggle = document.getElementById('consoleToggle');
+            
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
             
             const toast = document.getElementById('toast');
             const toastTitle = document.getElementById('toastTitle');
@@ -622,19 +741,35 @@
             });
             
             // ── Toast ──
-            function showToast(title, message, type = 'success') {
+            window.showToast = function(title, message, type = 'success') {
                 toastTitle.textContent = title;
                 toastMessage.textContent = message;
                 toast.style.borderLeft = `4px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b'}`;
                 toast.classList.add('show');
                 clearTimeout(toastTimeout);
                 toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 4000);
-            }
+            };
             
             function setStatus(text, type) {
                 statusBadge.textContent = text;
                 statusBadge.className = 'status-badge';
                 if (type) statusBadge.classList.add(type);
+            }
+            
+            // ── Progress Bar ──
+            function showProgress() {
+                progressContainer.classList.add('active');
+                progressBar.className = 'progress-bar';
+            }
+            function hideProgress(success = true) {
+                if (success) {
+                    progressBar.className = 'progress-bar done';
+                    setTimeout(() => {
+                        progressContainer.classList.remove('active');
+                    }, 1000);
+                } else {
+                    progressContainer.classList.remove('active');
+                }
             }
             
             // ─── RAGina AI Functions ──────────────────────────────────────────
@@ -1246,7 +1381,7 @@
                 fetchBtn.disabled = true;
                 setStatus('Loading...', 'loading');
                 addLog(`Scraping: ${url}`, 'info');
-                currentUrl = url;
+                showProgress();
                 
                 try {
                     const proxyUrls = [
@@ -1279,6 +1414,7 @@
                         jobStatus.style.color = '#ef4444';
                         addLog(`🚫 This job is no longer available.`, 'closed');
                         showToast('Job Closed', 'This position is no longer available.', 'error');
+                        hideProgress(false);
                         fetchBtn.disabled = false;
                         return;
                     }
@@ -1296,6 +1432,7 @@
                         addLog('⚠️ No sections found.', 'warn');
                         categoryGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No content sections found.</div>`;
                         suggestionsPanel.style.display = 'none';
+                        hideProgress(false);
                         fetchBtn.disabled = false;
                         return;
                     }
@@ -1316,11 +1453,13 @@
                     setStatus('Success', 'success');
                     addLog(`✅ Extracted ${sections.length} sections across multiple categories`, 'success');
                     showToast('Success!', `Extracted ${sections.length} sections. Click "Generate Suggestions" for resume tips.`, 'success');
+                    hideProgress(true);
                     
                 } catch (error) {
                     addLog(`❌ Error: ${error.message}`, 'error');
                     setStatus('Error', 'error');
                     showToast('Error', error.message, 'error');
+                    hideProgress(false);
                 } finally {
                     fetchBtn.disabled = false;
                 }
