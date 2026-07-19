@@ -178,50 +178,48 @@
             font-style: italic;
         }
         
-        .chunk-grid {
+        .section-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.8rem;
+            gap: 1rem;
         }
-        @media (max-width: 600px) { .chunk-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .section-grid { grid-template-columns: 1fr; } }
         
-        .chunk-card {
-            padding: 0.8rem 1rem;
+        .section-card {
             background: #f8fafc;
             border-radius: 8px;
-            border: 2px solid #e2e8f0;
-            cursor: pointer;
+            padding: 1rem 1.2rem;
+            border-left: 4px solid #4a6cf7;
             transition: all 0.2s;
-            position: relative;
         }
-        .chunk-card:hover {
-            border-color: #4a6cf7;
+        .section-card:hover {
             background: #eff6ff;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(74,108,247,0.1);
         }
-        .chunk-card.selected {
-            border-color: #4a6cf7;
-            background: #dbeafe;
-            box-shadow: 0 0 0 3px rgba(74,108,247,0.2);
-        }
-        .chunk-card .chunk-label {
-            font-size: 0.6rem;
+        .section-card .section-label {
+            font-size: 0.7rem;
             text-transform: uppercase;
-            color: #6b7280;
+            color: #4a6cf7;
             font-weight: 700;
             letter-spacing: 0.5px;
             margin-bottom: 0.3rem;
         }
-        .chunk-card .chunk-text {
+        .section-card .section-heading {
+            font-size: 1rem;
+            font-weight: 600;
             color: #1a1a2e;
+            margin-bottom: 0.3rem;
+        }
+        .section-card .section-content {
             font-size: 0.85rem;
-            line-height: 1.5;
-            max-height: 120px;
+            color: #4a4a6a;
+            line-height: 1.6;
+            max-height: 200px;
             overflow: hidden;
             position: relative;
         }
-        .chunk-card .chunk-text::after {
+        .section-card .section-content::after {
             content: '';
             position: absolute;
             bottom: 0;
@@ -230,42 +228,29 @@
             height: 30px;
             background: linear-gradient(transparent, #f8fafc);
         }
-        .chunk-card.selected .chunk-text::after {
-            background: linear-gradient(transparent, #dbeafe);
+        .section-card:hover .section-content::after {
+            background: linear-gradient(transparent, #eff6ff);
         }
-        .chunk-card .chunk-check {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            color: #4a6cf7;
-            font-size: 1.2rem;
+        .section-card .section-content.expanded {
+            max-height: none;
+        }
+        .section-card .section-content.expanded::after {
             display: none;
         }
-        .chunk-card.selected .chunk-check { display: block; }
-        
-        .action-bar {
-            display: flex;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-        .action-bar button {
-            padding: 0.5rem 1.5rem;
+        .section-card .expand-btn {
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            color: #4a6cf7;
             cursor: pointer;
-            transition: all 0.2s;
+            font-size: 0.75rem;
+            margin-top: 0.3rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
         }
-        .btn-primary { background: #4a6cf7; color: white; }
-        .btn-primary:hover { background: #3a56d4; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { background: #e2e8f0; color: #1a1a2e; }
-        .btn-secondary:hover { background: #cbd5e1; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
+        .section-card .expand-btn:hover {
+            background: #dbeafe;
+        }
         
         .tabs {
             display: flex;
@@ -288,6 +273,23 @@
         .tabs button.active { background: #e2e8f0; color: #0f172a; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        
+        .full-description {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid #10b981;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .full-description h3 {
+            color: #065f46;
+            margin-bottom: 0.5rem;
+        }
         
         .console {
             margin-top: 1.5rem;
@@ -338,7 +340,6 @@
         .console-body .log-entry .level.warn { color: #fbbf24; }
         .console-body .log-entry .level.error { color: #f87171; }
         .console-body .log-entry .level.success { color: #34d399; }
-        .console-body .log-entry .level.closed { color: #f87171; }
         
         .loading-spinner {
             display: inline-block;
@@ -375,38 +376,33 @@
         .toast .toast-title { font-weight: 700; margin-bottom: 0.3rem; }
         .toast .toast-message { font-size: 0.85rem; color: #94a3b8; }
         
-        .extracted-box {
-            background: #f1f5f9;
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .action-buttons button {
+            padding: 0.5rem 1.5rem;
+            border: none;
             border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            border-left: 4px solid #10b981;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .extracted-box pre {
-            background: transparent;
-            color: #1a1a2e;
-            padding: 0;
-            font-size: 0.85rem;
-            white-space: pre-wrap;
-            max-height: 400px;
-            overflow-y: auto;
-            margin: 0;
-        }
-        
-        .section-count-badge {
-            background: #4a6cf7;
-            color: white;
-            padding: 0.1rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-        }
+        .btn-primary { background: #4a6cf7; color: white; }
+        .btn-primary:hover { background: #3a56d4; }
+        .btn-secondary { background: #e2e8f0; color: #1a1a2e; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 JobScraper Pro <span>v3.0</span></h1>
-            <p>Extract ALL job description sections using HTML structure analysis</p>
+            <h1>🎯 JobScraper Pro <span>v4.0</span></h1>
+            <p>Automatically extracts ALL job description sections - no manual selection needed</p>
         </header>
         
         <div class="input-section">
@@ -420,7 +416,7 @@
             <div class="stat-card"><div class="number" id="jobTitle">-</div><div class="label">Job Title</div></div>
             <div class="stat-card"><div class="number" id="jobCompany">-</div><div class="label">Company</div></div>
             <div class="stat-card"><div class="number" id="jobStatus">-</div><div class="label">Status</div></div>
-            <div class="stat-card"><div class="number" id="chunkCount">0</div><div class="label">Sections Found</div></div>
+            <div class="stat-card"><div class="number" id="sectionCount">0</div><div class="label">Sections Found</div></div>
         </div>
         
         <div class="main-grid">
@@ -443,29 +439,21 @@
                 </div>
                 <div class="panel-body">
                     <div class="tabs">
-                        <button class="active" data-tab="chunks">📋 Sections</button>
+                        <button class="active" data-tab="sections">📋 Sections</button>
+                        <button data-tab="full">📄 Full Description</button>
                         <button data-tab="json">📄 JSON</button>
                         <button data-tab="raw">📝 Raw HTML</button>
                     </div>
                     
-                    <div id="tabChunks" class="tab-content active">
-                        <div id="chunksContainer">
+                    <div id="tabSections" class="tab-content active">
+                        <div id="sectionsContainer">
                             <div class="empty-state">No content yet. Scrape a job to see sections.</div>
                         </div>
-                        <div class="action-bar" id="actionBar" style="display:none;">
-                            <button class="btn-success" id="selectAllBtn">✅ Select All</button>
-                            <button class="btn-secondary" id="deselectAllBtn">⬜ Deselect All</button>
-                            <button class="btn-primary" id="extractSelectedBtn">🎯 Extract Selected</button>
-                            <button class="btn-danger" id="clearSelectionBtn">🗑️ Clear</button>
-                        </div>
-                        <div id="extractedResult" style="display:none;">
-                            <div class="extracted-box">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-                                    <strong style="color:#065f46;">✅ Extracted Job Description</strong>
-                                    <button class="btn-secondary" style="padding:0.2rem 0.8rem;font-size:0.7rem;" id="copyResultBtn">📄 Copy</button>
-                                </div>
-                                <pre id="extractedText"></pre>
-                            </div>
+                    </div>
+                    
+                    <div id="tabFull" class="tab-content">
+                        <div id="fullContainer">
+                            <div class="empty-state">No content yet. Scrape a job to see the full description.</div>
                         </div>
                     </div>
                     
@@ -505,15 +493,13 @@
             const viewerContainer = document.getElementById('viewerContainer');
             const jsonOutput = document.getElementById('jsonOutput');
             const rawOutput = document.getElementById('rawOutput');
-            const chunksContainer = document.getElementById('chunksContainer');
+            const sectionsContainer = document.getElementById('sectionsContainer');
+            const fullContainer = document.getElementById('fullContainer');
             const dataSource = document.getElementById('dataSource');
             const jobTitle = document.getElementById('jobTitle');
             const jobCompany = document.getElementById('jobCompany');
             const jobStatus = document.getElementById('jobStatus');
-            const chunkCount = document.getElementById('chunkCount');
-            const actionBar = document.getElementById('actionBar');
-            const extractedResult = document.getElementById('extractedResult');
-            const extractedText = document.getElementById('extractedText');
+            const sectionCount = document.getElementById('sectionCount');
             
             const consoleBody = document.getElementById('consoleBody');
             const logCount = document.getElementById('logCount');
@@ -525,10 +511,6 @@
             const toastTitle = document.getElementById('toastTitle');
             const toastMessage = document.getElementById('toastMessage');
             let toastTimeout = null;
-            
-            // ── State ──
-            let currentChunks = [];
-            let selectedChunks = new Set();
             
             // ── Console functions ──
             let logEntries = [];
@@ -611,48 +593,27 @@
             
             // ─── COMPLETE SECTION EXTRACTION ───────────────────────────────────
             
-            // Comprehensive section keywords
-            const SECTION_KEYWORDS = {
-                'job_description': ['job description', 'role description', 'position description', 'about the role', 'about this role', 'the role', 'overview'],
-                'responsibilities': ['responsibilities', 'what you\'ll do', 'what you will do', 'key responsibilities', 'role responsibilities', 'duties', 'what you\'ll be doing', 'your responsibilities'],
-                'requirements': ['requirements', 'qualifications', 'what you\'ll bring', 'what you will bring', 'skills', 'experience', 'must have', 'nice to have', 'preferred qualifications', 'basic qualifications', 'minimum qualifications', 'required qualifications'],
-                'about_you': ['about you', 'who you are', 'your profile', 'ideal candidate', 'we are looking for', 'you are'],
-                'education': ['education', 'degree', 'certification', 'academic', 'qualified'],
-                'benefits': ['benefits', 'perks', 'what we offer', 'compensation', 'salary', 'pay range', 'total rewards'],
-                'location': ['location', 'remote', 'hybrid', 'office', 'work from', 'telecommute', 'where you\'ll work'],
-                'company': ['about us', 'about the company', 'who we are', 'our culture', 'our values', 'why join us'],
-                'team': ['about the team', 'our team', 'team culture', 'who you\'ll work with'],
-                'career': ['career growth', 'development', 'learning', 'growth opportunities', 'career progression']
-            };
-            
             function getSectionType(text) {
                 const lower = text.toLowerCase();
-                for (const [type, keywords] of Object.entries(SECTION_KEYWORDS)) {
+                const patterns = {
+                    'Job Description': ['job description', 'role description', 'position description', 'about the role', 'overview'],
+                    'Responsibilities': ['responsibilities', 'what you\'ll do', 'what you will do', 'key responsibilities', 'duties', 'what you\'ll be doing'],
+                    'Requirements': ['requirements', 'qualifications', 'what you\'ll bring', 'what you will bring', 'must have', 'nice to have', 'preferred qualifications', 'basic qualifications', 'minimum qualifications'],
+                    'About You': ['about you', 'who you are', 'your profile', 'ideal candidate', 'we are looking for'],
+                    'Education': ['education', 'degree', 'certification', 'academic'],
+                    'Benefits': ['benefits', 'perks', 'what we offer', 'compensation', 'salary', 'pay range', 'total rewards'],
+                    'Location': ['location', 'remote', 'hybrid', 'office', 'work from', 'telecommute'],
+                    'About Company': ['about us', 'about the company', 'who we are', 'our culture', 'our values'],
+                    'Team': ['about the team', 'our team', 'team culture'],
+                    'Career Growth': ['career growth', 'development', 'learning', 'growth opportunities']
+                };
+                for (const [type, keywords] of Object.entries(patterns)) {
                     for (const keyword of keywords) {
                         if (lower.includes(keyword)) return type;
                     }
                 }
-                return 'unknown';
+                return 'Content';
             }
-            
-            function getSectionLabel(type) {
-                const labels = {
-                    'job_description': '📋 Job Description',
-                    'responsibilities': '📌 Responsibilities',
-                    'requirements': '📋 Requirements',
-                    'about_you': '👤 About You',
-                    'education': '🎓 Education',
-                    'benefits': '💰 Benefits & Pay',
-                    'location': '📍 Location',
-                    'company': '🏢 About Company',
-                    'team': '👥 Team',
-                    'career': '📈 Career Growth',
-                    'unknown': '📄 Content'
-                };
-                return labels[type] || labels.unknown;
-            }
-            
-            // ─── DEEP HTML SECTION EXTRACTION ──────────────────────────────────
             
             function extractAllSections(html) {
                 const parser = new DOMParser();
@@ -673,14 +634,12 @@
                     const text = el.textContent.trim();
                     if (text && text.length > 2 && text.length < 200 && !seenHeadings.has(text)) {
                         seenHeadings.add(text);
-                        // Try to find the content that follows this heading
                         let content = '';
                         let next = el.nextElementSibling;
                         let depth = 0;
-                        while (next && depth < 10) {
+                        while (next && depth < 15) {
                             const nextText = next.textContent.trim();
                             if (!nextText) { next = next.nextElementSibling; continue; }
-                            // Check if next element is a heading
                             const isNextHeading = next.matches(headingSelectors) || 
                                 (nextText.length < 100 && (nextText.includes(':') || nextText.includes('—')));
                             if (isNextHeading && nextText.length < 100) break;
@@ -694,7 +653,7 @@
                     }
                 });
                 
-                // 2. Look for content containers with data attributes
+                // 2. Look for content containers
                 const contentContainers = doc.querySelectorAll([
                     '[data-automation-id="jobPostingDescription"]',
                     '[data-automation-id="job-posting-details"]',
@@ -708,14 +667,10 @@
                     '.jd-description',
                     '[class*="description"]',
                     '[class*="details"]',
-                    '[class*="content"]',
-                    '.job-section',
-                    '.role-section'
+                    '[class*="content"]'
                 ].join(','));
                 
-                // If we have content containers, extract from them
                 if (contentContainers.length > 0) {
-                    // Find the largest content container
                     let mainContainer = null;
                     let maxLength = 0;
                     contentContainers.forEach(el => {
@@ -727,16 +682,14 @@
                     });
                     
                     if (mainContainer) {
-                        // Extract sections from the main container
                         const children = mainContainer.children;
-                        let currentSection = { heading: '', content: '', type: 'unknown' };
+                        let currentSection = { heading: '', content: '' };
                         
                         for (const child of children) {
                             const tag = child.tagName.toLowerCase();
                             const text = child.textContent.trim();
                             if (!text || text.length < 3) continue;
                             
-                            // Check if this is a heading (bold, strong, or short text with separator)
                             const isHeading = ['h1','h2','h3','h4','h5','h6','b','strong'].includes(tag) ||
                                 (text.length < 100 && (text.includes(':') || text.includes('—') || text.includes('-')) &&
                                 !text.includes('.') && !text.includes(',')) ||
@@ -744,25 +697,21 @@
                             
                             if (isHeading) {
                                 if (currentSection.content.trim().length > 20) {
-                                    const type = getSectionType(currentSection.heading + ' ' + currentSection.content);
                                     sections.push({
                                         heading: currentSection.heading || 'Untitled',
-                                        content: currentSection.content.trim(),
-                                        type: type
+                                        content: currentSection.content.trim()
                                     });
                                 }
-                                currentSection = { heading: text.replace(/[:—\-]$/, '').trim(), content: '', type: 'unknown' };
+                                currentSection = { heading: text.replace(/[:—\-]$/, '').trim(), content: '' };
                             } else {
                                 currentSection.content += (currentSection.content ? '\n' : '') + text;
                             }
                         }
                         
                         if (currentSection.content.trim().length > 20) {
-                            const type = getSectionType(currentSection.heading + ' ' + currentSection.content);
                             sections.push({
                                 heading: currentSection.heading || 'Untitled',
-                                content: currentSection.content.trim(),
-                                type: type
+                                content: currentSection.content.trim()
                             });
                         }
                     }
@@ -770,7 +719,6 @@
                 
                 // 3. Also extract from heading map
                 for (const [heading, content] of headingMap) {
-                    // Check if this heading already has a section
                     let exists = false;
                     for (const section of sections) {
                         if (section.heading === heading || section.content.includes(heading)) {
@@ -779,8 +727,7 @@
                         }
                     }
                     if (!exists && content.length > 20) {
-                        const type = getSectionType(heading + ' ' + content);
-                        sections.push({ heading: heading, content: content, type: type });
+                        sections.push({ heading: heading, content: content });
                     }
                 }
                 
@@ -799,15 +746,12 @@
                                     desc = div.textContent || desc;
                                 }
                                 if (desc.length > 50) {
-                                    // Try to split by common sections
                                     const splitSections = desc.split(/\n{2,}|(?<=[.!?])\s+(?=[A-Z][a-z])/);
                                     for (const part of splitSections) {
                                         if (part.trim().length > 20) {
-                                            const type = getSectionType(part);
                                             sections.push({
-                                                heading: type === 'unknown' ? 'Content' : type.replace('_', ' ').toUpperCase(),
-                                                content: part.trim(),
-                                                type: type
+                                                heading: 'Content',
+                                                content: part.trim()
                                             });
                                         }
                                     }
@@ -818,47 +762,14 @@
                     }
                 }
                 
-                // 5. If still no sections, use body text split by common patterns
+                // 5. If still no sections, use body text
                 if (sections.length === 0) {
                     const bodyText = doc.body?.textContent || '';
                     if (bodyText.length > 100) {
-                        // Try to split by common section patterns
-                        const patterns = [
-                            /(?:^|\n)([A-Z][A-Za-z\s]{3,30}?)[:—\-]\s*/g,
-                            /(?:^|\n)((?:About|Role|Job|Requirements|Qualifications|Responsibilities|Benefits|Location|Team|Company|Career)\s+[A-Za-z\s]{0,20})[:—\-]\s*/gi
-                        ];
-                        let remaining = bodyText;
-                        let lastIndex = 0;
-                        let match;
-                        
-                        for (const pattern of patterns) {
-                            const matches = [...remaining.matchAll(pattern)];
-                            if (matches.length > 1) {
-                                for (let i = 0; i < matches.length; i++) {
-                                    const m = matches[i];
-                                    const start = m.index + m[0].length;
-                                    const end = i < matches.length - 1 ? matches[i+1].index : remaining.length;
-                                    const content = remaining.substring(start, end).trim();
-                                    if (content.length > 20) {
-                                        sections.push({
-                                            heading: m[1]?.trim() || 'Section',
-                                            content: content,
-                                            type: getSectionType(m[1] + ' ' + content)
-                                        });
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                        
-                        // If still no sections, create one big section
-                        if (sections.length === 0 && bodyText.length > 100) {
-                            sections.push({
-                                heading: 'Job Description',
-                                content: bodyText.trim(),
-                                type: 'job_description'
-                            });
-                        }
+                        sections.push({
+                            heading: 'Job Description',
+                            content: bodyText.trim()
+                        });
                     }
                 }
                 
@@ -887,11 +798,7 @@
                     'no longer accepting applications',
                     'this position has been filled',
                     'job is not active',
-                    'job posting has expired',
-                    'this requisition has been filled',
-                    'application deadline passed',
-                    'this role is no longer available',
-                    'we are no longer accepting applications'
+                    'job posting has expired'
                 ];
                 for (const indicator of closedIndicators) {
                     if (lower.includes(indicator)) return true;
@@ -958,21 +865,19 @@
                     ];
                     
                     let html = null;
-                    let usedProxy = '';
                     for (const proxyUrl of proxyUrls) {
                         try {
                             const response = await fetch(proxyUrl);
                             if (response.ok) {
                                 html = await response.text();
-                                usedProxy = proxyUrl.split('?')[0].replace(/https?:\/\//, '').split('/')[0];
-                                addLog(`✅ Fetched ${html.length} bytes via ${usedProxy}`, 'success');
+                                addLog(`✅ Fetched ${html.length} bytes`, 'success');
                                 break;
                             }
                         } catch (e) { continue; }
                     }
                     
                     if (!html || html.length < 100) {
-                        throw new Error('Could not fetch the page content. The page may be blocked or inaccessible.');
+                        throw new Error('Could not fetch the page content.');
                     }
                     
                     viewerContainer.innerHTML = `<iframe srcdoc="${escapeHtml(html).replace(/"/g, '&quot;')}" style="width:100%;height:550px;border:none;border-radius:8px;background:#fff;"></iframe>`;
@@ -981,7 +886,7 @@
                         setStatus('Closed', 'closed');
                         jobStatus.textContent = '🚫 Closed';
                         jobStatus.style.color = '#ef4444';
-                        addLog(`🚫 This job is no longer available or has been closed.`, 'closed');
+                        addLog(`🚫 This job is no longer available.`, 'closed');
                         showToast('Job Closed', 'This position is no longer available.', 'error');
                         fetchBtn.disabled = false;
                         return;
@@ -993,32 +898,28 @@
                     jobStatus.textContent = '✅ Active';
                     jobStatus.style.color = '#10b981';
                     
-                    addLog('🔍 Extracting ALL sections from HTML structure...', 'info');
+                    addLog('🔍 Extracting ALL sections...', 'info');
                     const sections = extractAllSections(html);
                     
                     if (sections.length === 0) {
-                        addLog('⚠️ No sections found in the page.', 'warn');
-                        chunksContainer.innerHTML = `<div class="empty-state">No content sections found. The page may not contain a job description.</div>`;
-                        actionBar.style.display = 'none';
+                        addLog('⚠️ No sections found.', 'warn');
+                        sectionsContainer.innerHTML = `<div class="empty-state">No content sections found.</div>`;
+                        fullContainer.innerHTML = `<div class="empty-state">No content found.</div>`;
                         fetchBtn.disabled = false;
                         return;
                     }
                     
-                    currentChunks = sections;
-                    selectedChunks = new Set();
-                    chunkCount.textContent = sections.length;
-                    dataSource.textContent = `${sections.length} sections found`;
+                    sectionCount.textContent = sections.length;
+                    dataSource.textContent = `${sections.length} sections`;
                     
-                    renderChunks(sections);
+                    renderSections(sections);
+                    renderFullDescription(sections);
                     jsonOutput.textContent = JSON.stringify({ jobInfo, sections }, null, 2);
-                    rawOutput.textContent = html.slice(0, 10000) + (html.length > 10000 ? '\n... (truncated for display)' : '');
-                    
-                    actionBar.style.display = 'flex';
-                    extractedResult.style.display = 'none';
+                    rawOutput.textContent = html.slice(0, 10000) + (html.length > 10000 ? '\n... (truncated)' : '');
                     
                     setStatus('Success', 'success');
-                    addLog(`✅ Extracted ${sections.length} sections from HTML structure`, 'success');
-                    showToast('Success!', `Extracted ${sections.length} sections. Select the ones that are the actual job description.`);
+                    addLog(`✅ Extracted ${sections.length} sections`, 'success');
+                    showToast('Success!', `Extracted ${sections.length} sections from the job description.`);
                     
                 } catch (error) {
                     addLog(`❌ Error: ${error.message}`, 'error');
@@ -1030,129 +931,61 @@
                 }
             }
             
-            // ─── RENDER CHUNKS ──────────────────────────────────────────────────
+            // ─── RENDER SECTIONS ──────────────────────────────────────────────────
             
-            function renderChunks(sections) {
-                if (!sections || sections.length === 0) {
-                    chunksContainer.innerHTML = '<div class="empty-state">No content sections found.</div>';
-                    return;
-                }
-                
-                let html = '<div class="chunk-grid">';
+            function renderSections(sections) {
+                let html = '<div class="section-grid">';
                 for (let i = 0; i < sections.length; i++) {
                     const section = sections[i];
-                    const isSelected = selectedChunks.has(i);
-                    const label = getSectionLabel(section.type);
-                    const heading = section.heading || `Section ${i+1}`;
+                    const type = getSectionType(section.heading + ' ' + section.content);
                     const content = section.content || '';
-                    const preview = content.slice(0, 250);
+                    const preview = content.slice(0, 300);
                     
                     html += `
-                        <div class="chunk-card ${isSelected ? 'selected' : ''}" data-index="${i}">
-                            <div class="chunk-label">${label} — ${escapeHtml(heading)}</div>
-                            <div class="chunk-text">${escapeHtml(preview)}${content.length > 250 ? '...' : ''}</div>
-                            <div class="chunk-check">✓</div>
+                        <div class="section-card">
+                            <div class="section-label">${type}</div>
+                            <div class="section-heading">${escapeHtml(section.heading || 'Section ' + (i+1))}</div>
+                            <div class="section-content" id="section-content-${i}">${escapeHtml(preview)}${content.length > 300 ? '...' : ''}</div>
+                            ${content.length > 300 ? `<button class="expand-btn" onclick="toggleExpand(${i})">Show More</button>` : ''}
                         </div>
                     `;
                 }
                 html += '</div>';
-                chunksContainer.innerHTML = html;
+                sectionsContainer.innerHTML = html;
                 
-                document.querySelectorAll('.chunk-card').forEach(card => {
-                    card.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        if (selectedChunks.has(index)) {
-                            selectedChunks.delete(index);
-                        } else {
-                            selectedChunks.add(index);
-                        }
-                        this.classList.toggle('selected');
-                        updateSelectionUI();
-                    });
-                });
+                // Store full content for expand
+                window._sectionContents = sections.map(s => s.content);
             }
             
-            function updateSelectionUI() {
-                document.querySelectorAll('.chunk-card').forEach(card => {
-                    const index = parseInt(card.dataset.index);
-                    card.classList.toggle('selected', selectedChunks.has(index));
-                });
-                const selectBtn = document.getElementById('selectAllBtn');
-                if (selectedChunks.size === currentChunks.length) {
-                    selectBtn.textContent = '✅ All Selected';
+            // ─── RENDER FULL DESCRIPTION ──────────────────────────────────────────
+            
+            function renderFullDescription(sections) {
+                let html = '<div class="full-description">';
+                for (const section of sections) {
+                    const type = getSectionType(section.heading + ' ' + section.content);
+                    html += `<h3>${type}${section.heading && !section.heading.includes('Content') ? ` — ${escapeHtml(section.heading)}` : ''}</h3>`;
+                    html += `<p>${escapeHtml(section.content)}</p><br>`;
+                }
+                html += '</div>';
+                fullContainer.innerHTML = html;
+            }
+            
+            // ─── EXPAND FUNCTION ──────────────────────────────────────────────────
+            
+            window.toggleExpand = function(index) {
+                const el = document.getElementById('section-content-' + index);
+                const btn = el.parentElement.querySelector('.expand-btn');
+                if (el.classList.contains('expanded')) {
+                    el.classList.remove('expanded');
+                    const content = window._sectionContents[index] || '';
+                    el.textContent = escapeHtml(content.slice(0, 300)) + (content.length > 300 ? '...' : '');
+                    btn.textContent = 'Show More';
                 } else {
-                    selectBtn.textContent = '✅ Select All';
+                    el.classList.add('expanded');
+                    el.textContent = escapeHtml(window._sectionContents[index] || '');
+                    btn.textContent = 'Show Less';
                 }
-            }
-            
-            // ─── EXTRACT SELECTED ──────────────────────────────────────────────
-            
-            function extractSelected() {
-                if (selectedChunks.size === 0) {
-                    showToast('No Selection', 'Please select at least one content section.', 'error');
-                    return;
-                }
-                
-                const selectedText = Array.from(selectedChunks)
-                    .sort((a, b) => a - b)
-                    .map(i => {
-                        const section = currentChunks[i];
-                        const label = getSectionLabel(section.type);
-                        return `${label}\n${'─'.repeat(label.length)}\n${section.content}`;
-                    })
-                    .join('\n\n');
-                
-                extractedText.textContent = selectedText;
-                extractedResult.style.display = 'block';
-                addLog(`✅ Extracted ${selectedChunks.size} selected sections`, 'success');
-                showToast('Extracted!', `${selectedChunks.size} sections combined into job description.`);
-            }
-            
-            // ─── COPY EXTRACTED RESULT ──────────────────────────────────────────
-            
-            document.getElementById('copyResultBtn').addEventListener('click', () => {
-                const text = extractedText.textContent;
-                if (!text) return;
-                navigator.clipboard?.writeText(text).then(() => {
-                    showToast('Copied!', 'Job description copied to clipboard.');
-                }).catch(() => {
-                    const area = document.createElement('textarea');
-                    area.value = text;
-                    document.body.appendChild(area);
-                    area.select();
-                    document.execCommand('copy');
-                    area.remove();
-                    showToast('Copied!', 'Job description copied to clipboard.');
-                });
-            });
-            
-            // ─── ACTION BUTTONS ──────────────────────────────────────────────────
-            
-            document.getElementById('selectAllBtn').addEventListener('click', () => {
-                for (let i = 0; i < currentChunks.length; i++) {
-                    selectedChunks.add(i);
-                }
-                renderChunks(currentChunks);
-                updateSelectionUI();
-            });
-            
-            document.getElementById('deselectAllBtn').addEventListener('click', () => {
-                selectedChunks.clear();
-                renderChunks(currentChunks);
-                updateSelectionUI();
-            });
-            
-            document.getElementById('clearSelectionBtn').addEventListener('click', () => {
-                selectedChunks.clear();
-                currentChunks = [];
-                chunkCount.textContent = 0;
-                chunksContainer.innerHTML = '<div class="empty-state">Cleared. Scrape a new job to start over.</div>';
-                actionBar.style.display = 'none';
-                extractedResult.style.display = 'none';
-                addLog('🧹 Cleared all selections', 'info');
-            });
-            
-            document.getElementById('extractSelectedBtn').addEventListener('click', extractSelected);
+            };
             
             // ─── EVENT BINDING ──────────────────────────────────────────────────
             
@@ -1164,10 +997,10 @@
             // ─── INIT LOG ──────────────────────────────────────────────────────
             
             addLog('🔗 Enter any URL and click Scrape to extract ALL job description sections.', 'info');
-            addLog('💡 The app analyzes HTML structure to find every section: About, Responsibilities, Qualifications, etc.', 'info');
+            addLog('💡 The app automatically finds and displays every section.', 'info');
             
             if (typeof window.RAGina !== 'undefined') {
-                addLog('🧠 RAGina AI loaded and ready for enhancement.', 'success');
+                addLog('🧠 RAGina AI loaded and ready.', 'success');
             }
             
         })();
