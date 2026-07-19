@@ -3,22 +3,32 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JobScraper Pro – Full Job Description Extractor</title>
+    <title>JobScraper Pro – AI-Powered Job Description Extractor</title>
     
-    <!-- RAGina CDN -->
+    <!-- RAGina CDN for AI enhancement -->
     <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js"></script>
     
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* ─────────────────── RESET & BASE ─────────────────── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f0f2f5;
             color: #1a1a2e;
             padding: 2rem;
             line-height: 1.6;
+            min-height: 100vh;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
         
+        /* ─────────────────── HEADER ─────────────────── */
         header {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: white;
@@ -41,8 +51,12 @@
             font-size: 0.9rem;
             font-weight: 400;
         }
-        header p { color: #a8b2d1; margin-top: 0.5rem; }
+        header p {
+            color: #a8b2d1;
+            margin-top: 0.5rem;
+        }
         
+        /* ─────────────────── INPUT SECTION ─────────────────── */
         .input-section {
             background: white;
             padding: 1.5rem 2rem;
@@ -54,7 +68,11 @@
             gap: 1rem;
             align-items: center;
         }
-        .input-section label { font-weight: 600; color: #4a4a6a; font-size: 0.9rem; }
+        .input-section label {
+            font-weight: 600;
+            color: #4a4a6a;
+            font-size: 0.9rem;
+        }
         .input-section input[type="url"] {
             flex: 1;
             min-width: 300px;
@@ -97,6 +115,7 @@
         .status-badge.error { background: #fee2e2; color: #991b1b; }
         .status-badge.closed { background: #fecaca; color: #991b1b; }
         
+        /* ─────────────────── STATS ─────────────────── */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -113,6 +132,7 @@
         .stat-card .number { font-size: 1.2rem; font-weight: 700; color: #4a6cf7; }
         .stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem; }
         
+        /* ─────────────────── MAIN GRID ─────────────────── */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -150,76 +170,69 @@
             padding: 1.5rem;
             flex: 1;
             overflow: auto;
-            max-height: 600px;
+            max-height: 650px;
         }
         .panel-body iframe {
             width: 100%;
-            height: 550px;
+            height: 100%;
+            min-height: 550px;
             border: none;
             border-radius: 8px;
             background: #f8fafc;
         }
-        .panel-body pre {
-            background: #0f172a;
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            overflow: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin: 0;
-            max-height: 520px;
-        }
-        .panel-body .empty-state {
-            color: #94a3b8;
-            text-align: center;
-            padding: 3rem 1rem;
-            font-style: italic;
-        }
         
-        .section-grid {
+        /* ─────────────────── SECTION TILES ─────────────────── */
+        .section-tiles {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
-        @media (max-width: 600px) { .section-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .section-tiles { grid-template-columns: 1fr; } }
         
-        .section-card {
+        .section-tile {
             background: #f8fafc;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 1rem 1.2rem;
             border-left: 4px solid #4a6cf7;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
         }
-        .section-card:hover {
+        .section-tile:hover {
             background: #eff6ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(74,108,247,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(74,108,247,0.12);
         }
-        .section-card .section-label {
-            font-size: 0.7rem;
+        .section-tile .tile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .section-tile .tile-type {
+            font-size: 0.6rem;
             text-transform: uppercase;
             color: #4a6cf7;
             font-weight: 700;
             letter-spacing: 0.5px;
-            margin-bottom: 0.3rem;
+            background: #dbeafe;
+            padding: 0.1rem 0.6rem;
+            border-radius: 12px;
         }
-        .section-card .section-heading {
-            font-size: 1rem;
+        .section-tile .tile-heading {
+            font-size: 0.9rem;
             font-weight: 600;
             color: #1a1a2e;
             margin-bottom: 0.3rem;
         }
-        .section-card .section-content {
-            font-size: 0.85rem;
+        .section-tile .tile-content {
+            font-size: 0.8rem;
             color: #4a4a6a;
-            line-height: 1.6;
-            max-height: 200px;
+            line-height: 1.5;
+            max-height: 80px;
             overflow: hidden;
             position: relative;
         }
-        .section-card .section-content::after {
+        .section-tile .tile-content::after {
             content: '';
             position: absolute;
             bottom: 0;
@@ -228,30 +241,85 @@
             height: 30px;
             background: linear-gradient(transparent, #f8fafc);
         }
-        .section-card:hover .section-content::after {
+        .section-tile:hover .tile-content::after {
             background: linear-gradient(transparent, #eff6ff);
         }
-        .section-card .section-content.expanded {
+        .section-tile .tile-content.expanded {
             max-height: none;
         }
-        .section-card .section-content.expanded::after {
+        .section-tile .tile-content.expanded::after {
             display: none;
         }
-        .section-card .expand-btn {
-            background: none;
-            border: none;
-            color: #4a6cf7;
-            cursor: pointer;
-            font-size: 0.75rem;
-            margin-top: 0.3rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            transition: background 0.2s;
+        
+        .section-tile .tile-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
         }
-        .section-card .expand-btn:hover {
-            background: #dbeafe;
+        .section-tile .tile-actions button {
+            padding: 0.2rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .section-tile .tile-actions .btn-expand {
+            background: #e2e8f0;
+            color: #1a1a2e;
+        }
+        .section-tile .tile-actions .btn-expand:hover { background: #cbd5e1; }
+        .section-tile .tile-actions .btn-refetch {
+            background: #4a6cf7;
+            color: white;
+        }
+        .section-tile .tile-actions .btn-refetch:hover { background: #3a56d4; }
+        .section-tile .tile-actions .btn-refetch:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .section-tile .tile-actions .btn-copy {
+            background: #10b981;
+            color: white;
+        }
+        .section-tile .tile-actions .btn-copy:hover { background: #059669; }
+        
+        .section-tile .regenerate-indicator {
+            display: none;
+            font-size: 0.7rem;
+            color: #4a6cf7;
+            margin-top: 0.3rem;
+            animation: pulse 1s infinite;
+        }
+        .section-tile .regenerate-indicator.active {
+            display: block;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
+        /* ─────────────────── FULL DESCRIPTION ─────────────────── */
+        .full-description {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border-left: 4px solid #10b981;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .full-description h3 {
+            color: #065f46;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* ─────────────────── TABS ─────────────────── */
         .tabs {
             display: flex;
             gap: 0.25rem;
@@ -274,23 +342,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .full-description {
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 1.5rem;
-            border-left: 4px solid #10b981;
-            margin-top: 1rem;
-            white-space: pre-wrap;
-            font-size: 0.9rem;
-            line-height: 1.7;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .full-description h3 {
-            color: #065f46;
-            margin-bottom: 0.5rem;
-        }
-        
+        /* ─────────────────── CONSOLE ─────────────────── */
         .console {
             margin-top: 1.5rem;
             background: #0f172a;
@@ -376,13 +428,20 @@
         .toast .toast-title { font-weight: 700; margin-bottom: 0.3rem; }
         .toast .toast-message { font-size: 0.85rem; color: #94a3b8; }
         
-        .action-buttons {
+        .empty-state {
+            color: #94a3b8;
+            text-align: center;
+            padding: 3rem 1rem;
+            font-style: italic;
+        }
+        
+        .action-bar {
             display: flex;
             gap: 0.8rem;
             flex-wrap: wrap;
             margin: 1rem 0;
         }
-        .action-buttons button {
+        .action-bar button {
             padding: 0.5rem 1.5rem;
             border: none;
             border-radius: 8px;
@@ -396,13 +455,15 @@
         .btn-secondary:hover { background: #cbd5e1; }
         .btn-success { background: #10b981; color: white; }
         .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 JobScraper Pro <span>v4.0</span></h1>
-            <p>Automatically extracts ALL job description sections - no manual selection needed</p>
+            <h1>🎯 JobScraper Pro <span>AI-Powered</span></h1>
+            <p>Intelligently extracts job description sections with RAGina AI – refetch and regenerate any section</p>
         </header>
         
         <div class="input-section">
@@ -416,7 +477,7 @@
             <div class="stat-card"><div class="number" id="jobTitle">-</div><div class="label">Job Title</div></div>
             <div class="stat-card"><div class="number" id="jobCompany">-</div><div class="label">Company</div></div>
             <div class="stat-card"><div class="number" id="jobStatus">-</div><div class="label">Status</div></div>
-            <div class="stat-card"><div class="number" id="sectionCount">0</div><div class="label">Sections Found</div></div>
+            <div class="stat-card"><div class="number" id="sectionCount">0</div><div class="label">Sections</div></div>
         </div>
         
         <div class="main-grid">
@@ -426,7 +487,7 @@
                     <span class="badge">embedded</span>
                 </div>
                 <div class="panel-body" id="viewerContainer">
-                    <div style="height:550px;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#94a3b8;font-style:italic;border-radius:8px;">
+                    <div style="height:100%;min-height:550px;display:flex;align-items:center;justify-content:center;background:#f8fafc;color:#94a3b8;font-style:italic;border-radius:8px;">
                         Enter a URL and click Scrape
                     </div>
                 </div>
@@ -434,31 +495,31 @@
             
             <div class="panel">
                 <div class="panel-header">
-                    <span>📊 Extracted Sections</span>
+                    <span>📊 Job Description</span>
                     <span class="badge" id="dataSource">waiting</span>
                 </div>
                 <div class="panel-body">
                     <div class="tabs">
-                        <button class="active" data-tab="sections">📋 Sections</button>
+                        <button class="active" data-tab="tiles">🧩 Smart Tiles</button>
                         <button data-tab="full">📄 Full Description</button>
                         <button data-tab="json">📄 JSON</button>
-                        <button data-tab="raw">📝 Raw HTML</button>
                     </div>
                     
-                    <div id="tabSections" class="tab-content active">
-                        <div id="sectionsContainer">
-                            <div class="empty-state">No content yet. Scrape a job to see sections.</div>
+                    <div id="tabTiles" class="tab-content active">
+                        <div id="tilesContainer">
+                            <div class="empty-state">No content yet. Scrape a job to see intelligent tiles.</div>
                         </div>
                     </div>
                     
                     <div id="tabFull" class="tab-content">
                         <div id="fullContainer">
-                            <div class="empty-state">No content yet. Scrape a job to see the full description.</div>
+                            <div class="empty-state">No content yet.</div>
                         </div>
                     </div>
                     
-                    <div id="tabJson" class="tab-content"><pre id="jsonOutput">{"message":"Waiting for data..."}</pre></div>
-                    <div id="tabRaw" class="tab-content"><pre id="rawOutput">Waiting for data...</pre></div>
+                    <div id="tabJson" class="tab-content">
+                        <pre id="jsonOutput" style="background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;font-size:0.8rem;overflow:auto;max-height:500px;white-space:pre-wrap;word-wrap:break-word;margin:0;">{"message":"Waiting for data..."}</pre>
+                    </div>
                 </div>
             </div>
         </div>
@@ -492,8 +553,7 @@
             const statusBadge = document.getElementById('statusBadge');
             const viewerContainer = document.getElementById('viewerContainer');
             const jsonOutput = document.getElementById('jsonOutput');
-            const rawOutput = document.getElementById('rawOutput');
-            const sectionsContainer = document.getElementById('sectionsContainer');
+            const tilesContainer = document.getElementById('tilesContainer');
             const fullContainer = document.getElementById('fullContainer');
             const dataSource = document.getElementById('dataSource');
             const jobTitle = document.getElementById('jobTitle');
@@ -511,6 +571,12 @@
             const toastTitle = document.getElementById('toastTitle');
             const toastMessage = document.getElementById('toastMessage');
             let toastTimeout = null;
+            
+            // ── State ──
+            let currentSections = [];
+            let currentHtml = '';
+            let currentUrl = '';
+            let raginaEngine = null;
             
             // ── Console functions ──
             let logEntries = [];
@@ -531,6 +597,7 @@
             }
             
             function escapeHtml(str) {
+                if (!str) return '';
                 const div = document.createElement('div');
                 div.textContent = str;
                 return div.innerHTML;
@@ -591,28 +658,59 @@
                 if (type) statusBadge.classList.add(type);
             }
             
-            // ─── COMPLETE SECTION EXTRACTION ───────────────────────────────────
+            // ─── RAGina AI Functions ──────────────────────────────────────────
+            
+            async function callRAGina(prompt, context) {
+                try {
+                    // Use RAGina's askLLM if available
+                    if (window.RAGina && window.RAGina.engine && window.RAGina.engine.isReady) {
+                        // Build index with context
+                        const engine = window.RAGina.engine;
+                        const data = { 'job_description': { bodyText: context } };
+                        engine.buildIndex(data, 200);
+                        
+                        // Now ask
+                        const result = await window.RAGina.askLLM(prompt, 'openai');
+                        return result;
+                    }
+                    
+                    // Fallback to direct API
+                    const response = await fetch('https://ragina-crawler-ragina.vercel.app/api/ask', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: prompt })
+                    });
+                    if (!response.ok) throw new Error('RAGina API error');
+                    const data = await response.json();
+                    return data.text || data;
+                } catch (error) {
+                    console.error('RAGina error:', error);
+                    return null;
+                }
+            }
+            
+            // ─── Extract Sections from HTML ──────────────────────────────────
             
             function getSectionType(text) {
                 const lower = text.toLowerCase();
                 const patterns = {
-                    'Job Description': ['job description', 'role description', 'position description', 'about the role', 'overview'],
-                    'Responsibilities': ['responsibilities', 'what you\'ll do', 'what you will do', 'key responsibilities', 'duties', 'what you\'ll be doing'],
-                    'Requirements': ['requirements', 'qualifications', 'what you\'ll bring', 'what you will bring', 'must have', 'nice to have', 'preferred qualifications', 'basic qualifications', 'minimum qualifications'],
-                    'About You': ['about you', 'who you are', 'your profile', 'ideal candidate', 'we are looking for'],
-                    'Education': ['education', 'degree', 'certification', 'academic'],
-                    'Benefits': ['benefits', 'perks', 'what we offer', 'compensation', 'salary', 'pay range', 'total rewards'],
-                    'Location': ['location', 'remote', 'hybrid', 'office', 'work from', 'telecommute'],
-                    'About Company': ['about us', 'about the company', 'who we are', 'our culture', 'our values'],
-                    'Team': ['about the team', 'our team', 'team culture'],
-                    'Career Growth': ['career growth', 'development', 'learning', 'growth opportunities']
+                    '📋 Job Description': ['job description', 'role description', 'position description', 'about the role', 'overview'],
+                    '📌 Responsibilities': ['responsibilities', 'what you\'ll do', 'what you will do', 'key responsibilities', 'duties', 'what you\'ll be doing'],
+                    '📋 Requirements': ['requirements', 'qualifications', 'what you\'ll bring', 'what you will bring', 'must have', 'nice to have', 'preferred qualifications', 'basic qualifications', 'minimum qualifications'],
+                    '👤 About You': ['about you', 'who you are', 'your profile', 'ideal candidate', 'we are looking for'],
+                    '🎓 Education': ['education', 'degree', 'certification', 'academic'],
+                    '💰 Benefits & Pay': ['benefits', 'perks', 'what we offer', 'compensation', 'salary', 'pay range', 'total rewards'],
+                    '📍 Location': ['location', 'remote', 'hybrid', 'office', 'work from', 'telecommute'],
+                    '🏢 About Company': ['about us', 'about the company', 'who we are', 'our culture', 'our values'],
+                    '👥 Team': ['about the team', 'our team', 'team culture'],
+                    '📈 Career Growth': ['career growth', 'development', 'learning', 'growth opportunities']
                 };
                 for (const [type, keywords] of Object.entries(patterns)) {
                     for (const keyword of keywords) {
                         if (lower.includes(keyword)) return type;
                     }
                 }
-                return 'Content';
+                return '📄 Content';
             }
             
             function extractAllSections(html) {
@@ -621,14 +719,12 @@
                 const sections = [];
                 const seenHeadings = new Set();
                 
-                // 1. Find ALL heading elements
+                // Find ALL heading elements
                 const headingSelectors = 'h1, h2, h3, h4, h5, h6, strong, b, ' +
                     '[class*="heading"], [class*="title"], [class*="label"], ' +
-                    '[data-automation-id*="heading"], [data-automation-id*="title"], ' +
-                    '.job-title, .role-title, .section-title';
+                    '[data-automation-id*="heading"], [data-automation-id*="title"]';
                 
                 const allHeadings = doc.querySelectorAll(headingSelectors);
-                const headingMap = new Map();
                 
                 allHeadings.forEach(el => {
                     const text = el.textContent.trim();
@@ -648,26 +744,21 @@
                             depth++;
                         }
                         if (content.trim().length > 10) {
-                            headingMap.set(text, content.trim());
+                            sections.push({
+                                heading: text,
+                                content: content.trim()
+                            });
                         }
                     }
                 });
                 
-                // 2. Look for content containers
+                // Look for content containers
                 const contentContainers = doc.querySelectorAll([
                     '[data-automation-id="jobPostingDescription"]',
                     '[data-automation-id="job-posting-details"]',
-                    '.job-description',
-                    '#job-description',
-                    '.description',
-                    '.job-details',
-                    '.posting-description',
-                    '.content',
-                    'article',
-                    '.jd-description',
-                    '[class*="description"]',
-                    '[class*="details"]',
-                    '[class*="content"]'
+                    '.job-description', '#job-description',
+                    '.description', '.job-details', '.posting-description',
+                    '.content', 'article', '.jd-description'
                 ].join(','));
                 
                 if (contentContainers.length > 0) {
@@ -717,21 +808,7 @@
                     }
                 }
                 
-                // 3. Also extract from heading map
-                for (const [heading, content] of headingMap) {
-                    let exists = false;
-                    for (const section of sections) {
-                        if (section.heading === heading || section.content.includes(heading)) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists && content.length > 20) {
-                        sections.push({ heading: heading, content: content });
-                    }
-                }
-                
-                // 4. Try JSON-LD as fallback
+                // Try JSON-LD as fallback
                 if (sections.length === 0) {
                     const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
                     for (let script of scripts) {
@@ -746,15 +823,10 @@
                                     desc = div.textContent || desc;
                                 }
                                 if (desc.length > 50) {
-                                    const splitSections = desc.split(/\n{2,}|(?<=[.!?])\s+(?=[A-Z][a-z])/);
-                                    for (const part of splitSections) {
-                                        if (part.trim().length > 20) {
-                                            sections.push({
-                                                heading: 'Content',
-                                                content: part.trim()
-                                            });
-                                        }
-                                    }
+                                    sections.push({
+                                        heading: 'Job Description',
+                                        content: desc.trim()
+                                    });
                                 }
                                 break;
                             }
@@ -762,7 +834,7 @@
                     }
                 }
                 
-                // 5. If still no sections, use body text
+                // If still no sections, use body text
                 if (sections.length === 0) {
                     const bodyText = doc.body?.textContent || '';
                     if (bodyText.length > 100) {
@@ -773,7 +845,7 @@
                     }
                 }
                 
-                // 6. Clean up and remove duplicates
+                // Clean up and remove duplicates
                 const uniqueSections = [];
                 const seenContent = new Set();
                 for (const section of sections) {
@@ -787,7 +859,7 @@
                 return uniqueSections;
             }
             
-            // ─── DETECT CLOSED JOB ──────────────────────────────────────────────
+            // ─── Detect Closed Job ──────────────────────────────────────────
             
             function isJobClosed(html) {
                 const lower = html.toLowerCase();
@@ -806,7 +878,7 @@
                 return false;
             }
             
-            // ─── EXTRACT JOB INFO ──────────────────────────────────────────────
+            // ─── Extract Job Info ──────────────────────────────────────────
             
             function extractJobInfo(html) {
                 const parser = new DOMParser();
@@ -844,7 +916,171 @@
                 return { title, company };
             }
             
-            // ─── FETCH AND EXTRACT ──────────────────────────────────────────────
+            // ─── Refetch / Regenerate Section with RAGina ──────────────────
+            
+            async function regenerateSection(index, customPrompt = null) {
+                const section = currentSections[index];
+                if (!section) return;
+                
+                const tile = document.querySelector(`.section-tile[data-index="${index}"]`);
+                const indicator = tile?.querySelector('.regenerate-indicator');
+                const refetchBtn = tile?.querySelector('.btn-refetch');
+                
+                if (indicator) indicator.classList.add('active');
+                if (refetchBtn) refetchBtn.disabled = true;
+                
+                addLog(`🔄 Regenerating section: ${section.heading}`, 'info');
+                
+                try {
+                    // Build context from all sections
+                    const context = currentSections.map(s => s.content).join('\n\n');
+                    
+                    // Build prompt for RAGina
+                    const prompt = customPrompt || `
+                        You are an expert job description writer. 
+                        Based on the following job description context, please rewrite or regenerate the section titled "${section.heading}".
+                        
+                        Make it professional, detailed, and well-structured.
+                        If it's a responsibilities section, use bullet points.
+                        If it's a requirements section, list them clearly.
+                        
+                        Only output the regenerated content for this section. Do not include the heading.
+                        
+                        Context:
+                        ${context}
+                        
+                        Current section content:
+                        ${section.content}
+                        
+                        Please regenerate this section:
+                    `;
+                    
+                    // Call RAGina
+                    const result = await callRAGina(prompt, context);
+                    
+                    if (result && result.length > 20) {
+                        // Update the section content
+                        currentSections[index].content = result.trim();
+                        
+                        // Update the display
+                        renderTiles(currentSections);
+                        renderFullDescription(currentSections);
+                        jsonOutput.textContent = JSON.stringify({ sections: currentSections }, null, 2);
+                        
+                        addLog(`✅ Section regenerated: ${section.heading}`, 'success');
+                        showToast('Regenerated!', `Section "${section.heading}" has been updated.`, 'success');
+                    } else {
+                        throw new Error('RAGina returned empty or invalid response');
+                    }
+                    
+                } catch (error) {
+                    addLog(`❌ Regeneration failed: ${error.message}`, 'error');
+                    showToast('Error', `Failed to regenerate section: ${error.message}`, 'error');
+                } finally {
+                    if (indicator) indicator.classList.remove('active');
+                    if (refetchBtn) refetchBtn.disabled = false;
+                }
+            }
+            
+            // ─── Render Tiles ──────────────────────────────────────────────
+            
+            function renderTiles(sections) {
+                if (!sections || sections.length === 0) {
+                    tilesContainer.innerHTML = '<div class="empty-state">No sections found.</div>';
+                    return;
+                }
+                
+                let html = '<div class="section-tiles">';
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
+                    const type = getSectionType(section.heading + ' ' + section.content);
+                    const content = section.content || '';
+                    const preview = content.slice(0, 250);
+                    const isLong = content.length > 250;
+                    
+                    html += `
+                        <div class="section-tile" data-index="${i}">
+                            <div class="tile-header">
+                                <span class="tile-type">${type}</span>
+                                <span style="font-size:0.6rem;color:#94a3b8;">#${i+1}</span>
+                            </div>
+                            <div class="tile-heading">${escapeHtml(section.heading || 'Untitled')}</div>
+                            <div class="tile-content" id="tile-content-${i}">
+                                ${escapeHtml(preview)}${isLong ? '...' : ''}
+                            </div>
+                            <div class="regenerate-indicator" id="indicator-${i}">
+                                🔄 Regenerating with AI...
+                            </div>
+                            <div class="tile-actions">
+                                ${isLong ? `<button class="btn-expand" onclick="toggleTileExpand(${i})">Show More</button>` : ''}
+                                <button class="btn-refetch" onclick="regenerateSection(${i})">🔄 Refetch</button>
+                                <button class="btn-copy" onclick="copySection(${i})">📄 Copy</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                tilesContainer.innerHTML = html;
+                
+                // Store full content for expand
+                window._sectionContents = sections.map(s => s.content);
+            }
+            
+            // ─── Render Full Description ──────────────────────────────────
+            
+            function renderFullDescription(sections) {
+                if (!sections || sections.length === 0) {
+                    fullContainer.innerHTML = '<div class="empty-state">No content yet.</div>';
+                    return;
+                }
+                
+                let html = '<div class="full-description">';
+                for (const section of sections) {
+                    const type = getSectionType(section.heading + ' ' + section.content);
+                    html += `<h3>${type}${section.heading && !section.heading.includes('Content') ? ` — ${escapeHtml(section.heading)}` : ''}</h3>`;
+                    html += `<p>${escapeHtml(section.content)}</p><br>`;
+                }
+                html += '</div>';
+                fullContainer.innerHTML = html;
+            }
+            
+            // ─── Global Functions for Tiles ──────────────────────────────
+            
+            window.toggleTileExpand = function(index) {
+                const el = document.getElementById('tile-content-' + index);
+                const btn = el.closest('.section-tile').querySelector('.btn-expand');
+                if (el.classList.contains('expanded')) {
+                    el.classList.remove('expanded');
+                    const content = window._sectionContents[index] || '';
+                    el.textContent = escapeHtml(content.slice(0, 250)) + (content.length > 250 ? '...' : '');
+                    btn.textContent = 'Show More';
+                } else {
+                    el.classList.add('expanded');
+                    el.textContent = escapeHtml(window._sectionContents[index] || '');
+                    btn.textContent = 'Show Less';
+                }
+            };
+            
+            window.copySection = function(index) {
+                const content = window._sectionContents[index] || '';
+                navigator.clipboard?.writeText(content).then(() => {
+                    showToast('Copied!', 'Section content copied to clipboard.');
+                }).catch(() => {
+                    const area = document.createElement('textarea');
+                    area.value = content;
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand('copy');
+                    area.remove();
+                    showToast('Copied!', 'Section content copied to clipboard.');
+                });
+            };
+            
+            window.regenerateSection = function(index) {
+                regenerateSection(index);
+            };
+            
+            // ─── Main Fetch Function ──────────────────────────────────────
             
             async function fetchAndExtract() {
                 const url = urlInput.value.trim();
@@ -856,6 +1092,7 @@
                 fetchBtn.disabled = true;
                 setStatus('Loading...', 'loading');
                 addLog(`Scraping: ${url}`, 'info');
+                currentUrl = url;
                 
                 try {
                     const proxyUrls = [
@@ -880,7 +1117,10 @@
                         throw new Error('Could not fetch the page content.');
                     }
                     
-                    viewerContainer.innerHTML = `<iframe srcdoc="${escapeHtml(html).replace(/"/g, '&quot;')}" style="width:100%;height:550px;border:none;border-radius:8px;background:#fff;"></iframe>`;
+                    currentHtml = html;
+                    
+                    // Show preview
+                    viewerContainer.innerHTML = `<iframe srcdoc="${escapeHtml(html).replace(/"/g, '&quot;')}" style="width:100%;height:100%;min-height:550px;border:none;border-radius:8px;background:#fff;"></iframe>`;
                     
                     if (isJobClosed(html)) {
                         setStatus('Closed', 'closed');
@@ -898,28 +1138,36 @@
                     jobStatus.textContent = '✅ Active';
                     jobStatus.style.color = '#10b981';
                     
-                    addLog('🔍 Extracting ALL sections...', 'info');
+                    addLog('🔍 Extracting sections...', 'info');
                     const sections = extractAllSections(html);
                     
                     if (sections.length === 0) {
                         addLog('⚠️ No sections found.', 'warn');
-                        sectionsContainer.innerHTML = `<div class="empty-state">No content sections found.</div>`;
+                        tilesContainer.innerHTML = `<div class="empty-state">No content sections found.</div>`;
                         fullContainer.innerHTML = `<div class="empty-state">No content found.</div>`;
                         fetchBtn.disabled = false;
                         return;
                     }
                     
+                    currentSections = sections;
                     sectionCount.textContent = sections.length;
                     dataSource.textContent = `${sections.length} sections`;
                     
-                    renderSections(sections);
+                    renderTiles(sections);
                     renderFullDescription(sections);
-                    jsonOutput.textContent = JSON.stringify({ jobInfo, sections }, null, 2);
-                    rawOutput.textContent = html.slice(0, 10000) + (html.length > 10000 ? '\n... (truncated)' : '');
+                    jsonOutput.textContent = JSON.stringify({ url, jobInfo, sections }, null, 2);
+                    
+                    // Initialize RAGina with the context
+                    if (window.RAGina) {
+                        const context = sections.map(s => s.content).join('\n\n');
+                        const data = { 'job_description': { bodyText: context } };
+                        window.RAGina.loadData(data);
+                        addLog('🧠 RAGina loaded with job description context', 'success');
+                    }
                     
                     setStatus('Success', 'success');
                     addLog(`✅ Extracted ${sections.length} sections`, 'success');
-                    showToast('Success!', `Extracted ${sections.length} sections from the job description.`);
+                    showToast('Success!', `Extracted ${sections.length} sections. Use "Refetch" to regenerate any section with AI.`);
                     
                 } catch (error) {
                     addLog(`❌ Error: ${error.message}`, 'error');
@@ -931,76 +1179,22 @@
                 }
             }
             
-            // ─── RENDER SECTIONS ──────────────────────────────────────────────────
-            
-            function renderSections(sections) {
-                let html = '<div class="section-grid">';
-                for (let i = 0; i < sections.length; i++) {
-                    const section = sections[i];
-                    const type = getSectionType(section.heading + ' ' + section.content);
-                    const content = section.content || '';
-                    const preview = content.slice(0, 300);
-                    
-                    html += `
-                        <div class="section-card">
-                            <div class="section-label">${type}</div>
-                            <div class="section-heading">${escapeHtml(section.heading || 'Section ' + (i+1))}</div>
-                            <div class="section-content" id="section-content-${i}">${escapeHtml(preview)}${content.length > 300 ? '...' : ''}</div>
-                            ${content.length > 300 ? `<button class="expand-btn" onclick="toggleExpand(${i})">Show More</button>` : ''}
-                        </div>
-                    `;
-                }
-                html += '</div>';
-                sectionsContainer.innerHTML = html;
-                
-                // Store full content for expand
-                window._sectionContents = sections.map(s => s.content);
-            }
-            
-            // ─── RENDER FULL DESCRIPTION ──────────────────────────────────────────
-            
-            function renderFullDescription(sections) {
-                let html = '<div class="full-description">';
-                for (const section of sections) {
-                    const type = getSectionType(section.heading + ' ' + section.content);
-                    html += `<h3>${type}${section.heading && !section.heading.includes('Content') ? ` — ${escapeHtml(section.heading)}` : ''}</h3>`;
-                    html += `<p>${escapeHtml(section.content)}</p><br>`;
-                }
-                html += '</div>';
-                fullContainer.innerHTML = html;
-            }
-            
-            // ─── EXPAND FUNCTION ──────────────────────────────────────────────────
-            
-            window.toggleExpand = function(index) {
-                const el = document.getElementById('section-content-' + index);
-                const btn = el.parentElement.querySelector('.expand-btn');
-                if (el.classList.contains('expanded')) {
-                    el.classList.remove('expanded');
-                    const content = window._sectionContents[index] || '';
-                    el.textContent = escapeHtml(content.slice(0, 300)) + (content.length > 300 ? '...' : '');
-                    btn.textContent = 'Show More';
-                } else {
-                    el.classList.add('expanded');
-                    el.textContent = escapeHtml(window._sectionContents[index] || '');
-                    btn.textContent = 'Show Less';
-                }
-            };
-            
-            // ─── EVENT BINDING ──────────────────────────────────────────────────
+            // ─── Event Binding ──────────────────────────────────────────────
             
             fetchBtn.addEventListener('click', fetchAndExtract);
             urlInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') fetchBtn.click();
             });
             
-            // ─── INIT LOG ──────────────────────────────────────────────────────
+            // ─── Init Log ──────────────────────────────────────────────────────
             
-            addLog('🔗 Enter any URL and click Scrape to extract ALL job description sections.', 'info');
-            addLog('💡 The app automatically finds and displays every section.', 'info');
+            addLog('🔗 Enter any URL and click Scrape to extract job description sections.', 'info');
+            addLog('💡 Each section has a "Refetch" button that uses RAGina AI to regenerate that section.', 'info');
             
             if (typeof window.RAGina !== 'undefined') {
-                addLog('🧠 RAGina AI loaded and ready.', 'success');
+                addLog('🧠 RAGina AI loaded and ready for section regeneration.', 'success');
+            } else {
+                addLog('⚠️ RAGina not loaded. Section regeneration will use fallback.', 'warn');
             }
             
         })();
