@@ -1,8 +1,8 @@
 /**
- * jobdescrapper.js – A lightweight library to scrape job descriptions and generate ATS resume blueprints.
+ * jobscrapper.js – A lightweight library to scrape job descriptions and generate ATS resume blueprints.
  * 
  * Usage:
- *   <script src="https://your-cdn.com/jobdescrapper.js"></script>
+ *   <script src="https://cdn.jsdelivr.net/gh/suryasticsai/descrapper@main/jobscrapper.js"></script>
  *   <script>
  *     JobScraper.generateResume('https://example.com/job-posting')
  *       .then(result => console.log(result.resumeBlueprint))
@@ -31,7 +31,7 @@
   // ─── Default configuration ───
   const DEFAULTS = {
     aiEndpoint: 'https://ragina-crawler-ragina.vercel.app/api/ask',
-    timeout: 60000,
+    timeout: 30000, // 30 seconds
   };
 
   // ─── Utility functions ───
@@ -243,20 +243,49 @@
     throw new Error('Could not fetch the page content.');
   }
 
-  // ─── AI call (RAGina) ───
-  async function callAI(prompt, endpoint) {
+  // ─── AI call (RAGina) with improved error handling ───
+  async function callAI(prompt, endpoint, timeoutMs = 30000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal
       });
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-      const data = await response.json();
-      return data.text || data;
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        let errorText = `HTTP ${response.status}`;
+        try {
+          const text = await response.text();
+          errorText += `: ${text.substring(0, 150)}`;
+        } catch (e) { /* ignore */ }
+        throw new Error(errorText);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Invalid JSON response from API');
+      }
+
+      // Try common response shapes
+      if (data && typeof data === 'object') {
+        return data.text || data.result || data.response || data;
+      }
+      throw new Error('Unexpected API response format');
+
     } catch (error) {
-      console.error('AI error:', error);
-      throw error;
+      clearTimeout(timeout);
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timed out after ${timeoutMs/1000}s. The AI service may be busy.`);
+      }
+      console.error('AI error details:', error);
+      throw new Error(`AI error: ${error.message}`);
     }
   }
 
@@ -433,13 +462,10 @@ ${context}
 
     try {
       if (description) {
-        // Use provided description
         desc = description;
         jobInfo = { title: 'Pasted Job Description', company: 'Unknown' };
       } else {
-        // Scrape from URL
         html = await fetchHTML(url);
-        // Check for closed job
         if (html.toLowerCase().includes('this job is no longer available') || html.toLowerCase().includes('job has been closed')) {
           return { error: 'Job closed' };
         }
@@ -447,23 +473,19 @@ ${context}
         desc = extractDescription(html);
       }
 
-      // Check word count
       const wordCount = desc.split(/\s+/).filter(w => w.length > 0).length;
       if (wordCount < 15) {
         throw new Error('Description too short (<15 words). Please provide a full job description.');
       }
 
-      // Split into sections
       const sections = splitIntoSections(desc);
       const globalTags = extractGlobalTags(desc, 20);
 
-      // Generate resume blueprint
       const prompt = buildPrompt(sections);
-      let aiResult = await callAI(prompt, aiEndpoint);
+      let aiResult = await callAI(prompt, aiEndpoint, timeout);
       aiResult = aiResult.replace(/\*\*/g, '').replace(/\* /g, '').trim();
       const blueprint = parseResumeData(aiResult);
 
-      // Prepare final result
       const result = {
         exportedAt: new Date().toISOString(),
         job: {
@@ -480,7 +502,6 @@ ${context}
         globalTags,
         resumeBlueprint: blueprint,
         fullDescription: desc,
-        // include the raw AI output for debugging
         _rawAI: aiResult
       };
 
@@ -495,7 +516,7 @@ ${context}
   // ─── Expose to global ───
   const JobScraper = {
     generateResume,
-    version: '1.0.0'
+    version: '1.0.1' // bumped version
   };
 
   if (typeof module !== 'undefined' && module.exports) {
