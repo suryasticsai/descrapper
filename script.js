@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    // ─── askLLM with robust fallback ────────────────────────
+    // ─── askLLM with robust fallback (unchanged) ──────────────
     window.askLLM = async function(prompt, model, fallbackKeywords) {
         const maxRetries = 2;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -220,7 +220,7 @@
     });
 
     const state = {
-        jobDescription: null,       // full JobScraper result
+        jobDescription: null,
         jobKeywords: [],
         resumeText: '',
         resumeStructured: null,
@@ -425,7 +425,7 @@
         jdContainer.innerHTML = html;
     }
 
-    // ─── Resume parsing (AI + enhanced + simple) ─────────────
+    // ─── Resume parsing – improved name & bullet extraction ──
     async function parseResumeWithAI(text) {
         var prompt = 'You are an expert resume parser. Extract the following fields from the resume text below.\n' +
             'Return ONLY a valid JSON object with exactly these keys:\n' +
@@ -462,6 +462,7 @@
         }
     }
 
+    // Enhanced parser with better name detection
     function enhancedResumeParser(text) {
         var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
         var doc = nlp(text);
@@ -469,22 +470,28 @@
         var phone = (text.match(/\+?[\d\s\-()]{8,}/) || [])[0] || '';
         var linkedin = (text.match(/linkedin\.com\/in\/[a-zA-Z0-9\-]+/i) || [])[0] || '';
         var github = (text.match(/github\.com\/[a-zA-Z0-9\-]+/i) || [])[0] || '';
+
+        // Improved name extraction: capture only the first 2-3 capitalized words
         var name = '';
-        var nameRegex = /^([A-Za-z]+\s+[A-Za-z]+(?:\s+[A-Za-z]+)?)/;
-        for (var nl = 0; nl < lines.length; nl++) {
-            if (lines[nl].match(nameRegex) && lines[nl].length < 60) {
-                name = lines[nl].match(nameRegex)[0];
+        for (var nl = 0; nl < Math.min(lines.length, 20); nl++) {
+            var line = lines[nl];
+            var nameMatch = line.match(/^([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+            if (nameMatch && nameMatch[1].length < 50) {
+                name = nameMatch[1];
                 break;
             }
         }
         if (!name) {
-            for (var nl2 = 0; nl2 < lines.length; nl2++) {
-                if (/^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(lines[nl2]) && lines[nl2].length < 40) {
-                    name = lines[nl2];
+            for (var nl2 = 0; nl2 < Math.min(lines.length, 10); nl2++) {
+                var line2 = lines[nl2];
+                var simpleMatch = line2.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+/);
+                if (simpleMatch && simpleMatch[0].length < 40) {
+                    name = simpleMatch[0];
                     break;
                 }
             }
         }
+
         var locations = ['Hyderabad', 'Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Pune', 'India',
             'San Francisco', 'New York', 'Austin', 'London', 'Singapore', 'Seattle', 'Chicago', 'Boston', 'Toronto',
             'Sydney'
@@ -493,6 +500,7 @@
         for (var loc = 0; loc < locations.length; loc++) {
             if (text.includes(locations[loc])) { location = locations[loc]; break; }
         }
+
         var sectionMap = {
             summary: ['summary', 'profile', 'about me', 'objective'],
             experience: ['experience', 'work', 'employment', 'career history', 'professional experience'],
@@ -550,10 +558,13 @@
             var current = null;
             for (var el = 0; el < expLines.length; el++) {
                 var line3 = expLines[el];
+                // Improved bullet detection: include common bullet characters
+                var isBullet = /^[\u2022\u2023\u2043\uF0B7\-\u2013\u2014]\s*/.test(line3);
                 var isDash = /\u2014|\u2013/.test(line3);
                 var isAt = /\s+at\s+/i.test(line3);
                 var hasDates = /\d{4}\s*[-\u2013]\s*(present|\d{4})/i.test(line3);
                 var isCapWithDates = /^[A-Z][a-zA-Z\s]+/.test(line3) && hasDates;
+
                 if (isDash || isAt || isCapWithDates) {
                     if (current) result.push(current);
                     var title = '',
@@ -589,8 +600,8 @@
                     }
                     current = { title: title, company: company, location: '', dates: dates, bullets: [] };
                 } else if (current) {
-                    if (/^[\u2022\-\u2013]\s*/.test(line3)) {
-                        current.bullets.push(line3.replace(/^[\u2022\-\u2013]\s*/, ''));
+                    if (isBullet) {
+                        current.bullets.push(line3.replace(/^[\u2022\u2023\u2043\uF0B7\-\u2013\u2014]\s*/, ''));
                     } else if (/\d{4}\s*[-\u2013]\s*(present|\d{4})/i.test(line3) && !current.dates) {
                         current.dates = line3;
                     } else if (line3.match(/^[A-Z][a-z]+,\s*[A-Z]{2}/) && !current.location) {
@@ -623,6 +634,7 @@
         return structured;
     }
 
+    // Simple parser with improved name extraction
     function parseResumeSimple(text) {
         var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
         var resume = {
@@ -634,22 +646,30 @@
             certifications: '',
             projects: []
         };
+
+        // Improved name detection
         var nameFound = false;
         for (var ni = 0; ni < Math.min(lines.length, 20); ni++) {
-            if (lines[ni].match(/^[A-Z][a-z]+\s+[A-Z][a-z]+/)) {
-                resume.personalInfo.fullName = lines[ni];
+            var line = lines[ni];
+            var nameMatch = line.match(/^([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+            if (nameMatch && nameMatch[1].length < 50) {
+                resume.personalInfo.fullName = nameMatch[1];
                 nameFound = true;
                 break;
             }
         }
         if (!nameFound) {
             for (var ni2 = 0; ni2 < Math.min(lines.length, 10); ni2++) {
-                if (lines[ni2].length > 3 && !lines[ni2].match(/^[A-Z][A-Z\s]+$/)) {
-                    resume.personalInfo.fullName = lines[ni2];
+                var line2 = lines[ni2];
+                var simpleMatch = line2.match(/^[A-Z][a-z]+\s+[A-Z][a-z]+/);
+                if (simpleMatch && simpleMatch[0].length < 40) {
+                    resume.personalInfo.fullName = simpleMatch[0];
+                    nameFound = true;
                     break;
                 }
             }
         }
+
         var emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
         if (emailMatch) resume.personalInfo.email = emailMatch[0];
         var phoneMatch = text.match(/\+?[\d\s\-()]{8,}/);
@@ -660,6 +680,7 @@
         if (githubMatch) resume.personalInfo.github = githubMatch[0];
         var locMatch = text.match(/(Hyderabad|Bangalore|Mumbai|Delhi|Chennai|Pune|India)/i);
         if (locMatch) resume.personalInfo.location = locMatch[0];
+
         var currentSection = 'summary';
         var currentExp = null;
         var expBullets = [];
@@ -698,7 +719,7 @@
                 } else if (currentSection === 'certifications') {
                     resume.certifications += (resume.certifications ? '\n' : '') + lines[ri];
                 } else if (currentSection === 'projects') {
-                    var projectLine = lines[ri].replace(/^[\u2022\-\u2013]\s*/, '');
+                    var projectLine = lines[ri].replace(/^[\u2022\u2023\u2043\uF0B7\-\u2013]\s*/, '');
                     if (projectLine.length > 3) resume.projects.push(projectLine);
                 } else if (currentSection === 'experience') {
                     if (lines[ri].match(/^[A-Za-z ]{3,} at /) || (lines[ri].length < 60 && lines[ri].match(/^[A-Z]/))) {
@@ -716,8 +737,8 @@
                         currentExp = null;
                         expBullets = [];
                     } else if (lines[ri].startsWith('\u2022') || lines[ri].startsWith('-') || lines[ri].startsWith(
-                            '\u2013')) {
-                        expBullets.push(lines[ri].replace(/^[\u2022\-\u2013]\s*/, ''));
+                            '\u2013') || lines[ri].startsWith('\uF0B7')) {
+                        expBullets.push(lines[ri].replace(/^[\u2022\u2023\u2043\uF0B7\-\u2013]\s*/, ''));
                     } else if (lines[ri].length > 3 && currentExp) {
                         expBullets.push(lines[ri]);
                     }
@@ -742,7 +763,7 @@
         return resume;
     }
 
-    // ─── File extraction ──────────────────────────────────────
+    // ─── File extraction (unchanged) ──────────────────────────
     async function extractFileText(file) {
         var ext = file.name.split('.').pop().toLowerCase();
         var rawText = '';
@@ -868,7 +889,7 @@
         } catch (e) { log('Index error: ' + e.message, 'error'); }
     }
 
-    // ─── Resume preview rendering ─────────────────────────────
+    // ─── Resume preview rendering (unchanged) ──────────────────
     function fillFormFields(structured) {
         var fields = state._resumePreviewFields;
         if (!fields) {
@@ -1011,7 +1032,7 @@
         fetchPersonalInfoBtn.disabled = false;
     }
 
-    // ─── Save / load / clear resume ──────────────────────────
+    // ─── Save / load / clear resume (unchanged) ──────────────
     function saveResumeData() {
         var fields = state._resumePreviewFields;
         if (!fields) { log('No resume data to save.', 'warn'); return; }
@@ -1223,7 +1244,7 @@
         return text;
     }
 
-    // ─── Generate content ─────────────────────────────────────
+    // ─── Generate content (unchanged) ──────────────────────────
     function updateGenerateButton() {
         var hasJD = state.jobDescription && state.jobDescription.fullDescription;
         var hasEngine = state.engine && state.engine.isReady;
@@ -1384,7 +1405,7 @@
         }
     }
 
-    // ─── Curify section ──────────────────────────────────────
+    // ─── Curify section (unchanged) ──────────────────────────
     async function curifySection(sectionKey) {
         var card = document.getElementById('section-' + sectionKey);
         if (!card) return;
@@ -1549,7 +1570,7 @@
         }
     }
 
-    // ─── Utility functions ────────────────────────────────────
+    // ─── Utility functions (unchanged) ────────────────────────
     function assembleFullResumeText() {
         var labels = {
             summary: 'PROFESSIONAL SUMMARY',
@@ -1585,7 +1606,7 @@
         log('Resume JSON downloaded.', 'success');
     }
 
-    // ─── ATS HTML builder ─────────────────────────────────────
+    // ─── ATS HTML builder (unchanged) ────────────────────────
     function buildAtsHtml() {
         var edited = getEditedResumeData();
         var pi = edited.personalInfo || {};
@@ -1814,7 +1835,7 @@
     }
     debugToggleBtn.addEventListener('click', toggleDebug);
 
-    // ─── Event bindings ──────────────────────────────────────
+    // ─── Event bindings (unchanged) ──────────────────────────
     fetchBtn.addEventListener('click', async function() {
         var url = urlInput.value.trim();
         if (!url) { log('Enter a URL.', 'warn'); return; }
