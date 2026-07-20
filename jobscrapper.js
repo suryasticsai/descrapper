@@ -1,5 +1,6 @@
 /**
- * jobscrapper.js – A lightweight library to scrape job descriptions and generate ATS resume blueprints.
+ * jobscrapper.js – v1.0.3
+ * Lightweight library to scrape job descriptions and generate ATS resume blueprints.
  * 
  * Usage:
  *   <script src="https://cdn.jsdelivr.net/gh/suryasticsai/descrapper@main/jobscrapper.js"></script>
@@ -14,26 +15,15 @@
  *   - aiEndpoint: string (override the default RAGina API endpoint)
  *   - timeout: number (milliseconds, default 60000)
  *   - skipAI: boolean (if true, skip AI call and return sections only)
- * 
- * Returns a Promise resolving to an object:
- *   {
- *     job: { title, company, status },
- *     sections: [ { name, content, tags, wordCount } ],
- *     globalTags: [string],
- *     resumeBlueprint: { "Professional Summary": "...", ... },
- *     fullDescription: string,
- *     exportedAt: ISO string
- *   }
  */
 
 (function(global) {
   'use strict';
 
-  // ─── Default configuration ───
   const DEFAULTS = {
     aiEndpoint: 'https://ragina-crawler-ragina.vercel.app/api/ask',
-    timeout: 60000, // 60 seconds
-    maxPromptLength: 4000, // truncate prompt to avoid API limits
+    timeout: 60000,
+    maxPromptLength: 4000,
     maxRetries: 2,
   };
 
@@ -239,7 +229,7 @@
     throw new Error('Could not fetch the page content.');
   }
 
-  // ─── AI call (RAGina) with retry logic and timeout ───
+  // ─── AI call with retry and detailed error logging ───
   async function callAI(prompt, endpoint, timeoutMs = 60000, maxRetries = 2) {
     let lastError;
     
@@ -260,7 +250,7 @@
           let errorText = `HTTP ${response.status}`;
           try {
             const text = await response.text();
-            errorText += `: ${text.substring(0, 150)}`;
+            errorText += `: ${text.substring(0, 200)}`;
           } catch (e) { /* ignore */ }
           throw new Error(errorText);
         }
@@ -272,31 +262,27 @@
           throw new Error('Invalid JSON response from API');
         }
         
-        // Try common response shapes
         return data.text || data.result || data.response || data;
         
       } catch (error) {
         lastError = error;
-        // Don't retry on 4xx client errors (except 429 rate limit)
         const msg = error.message || '';
         if (msg.includes('400') || msg.includes('401') || msg.includes('403') || msg.includes('404')) {
           throw error;
         }
-        // Don't retry on abort (timeout) – we already timed out
         if (error.name === 'AbortError') {
-          throw new Error(`Request timed out after ${timeoutMs/1000}s. The AI service may be busy.`);
+          throw new Error(`Request timed out after ${timeoutMs/1000}s.`);
         }
         if (attempt < maxRetries) {
-          console.warn(`AI call attempt ${attempt + 1} failed, retrying in ${2000 * (attempt + 1)}ms...`);
-          await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); // exponential backoff
+          console.warn(`AI attempt ${attempt+1} failed, retrying in ${2000*(attempt+1)}ms...`);
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
         }
       }
     }
-    
     throw lastError || new Error('AI call failed after retries');
   }
 
-  // ─── Build a fallback blueprint when AI fails ───
+  // ─── Build fallback blueprint ───
   function buildFallbackBlueprint(sections) {
     const blueprint = {};
     const sectionNames = [
@@ -322,7 +308,6 @@
       'Interview Focus Areas'
     ];
     
-    // Map extracted sections to blueprint fields
     const sectionMap = {};
     for (const s of sections) {
       const cleanName = s.name.replace(/^[^\s]+\s/, '').trim();
@@ -330,7 +315,6 @@
     }
     
     for (const name of sectionNames) {
-      // Try to find a matching section
       let found = false;
       for (const [key, value] of Object.entries(sectionMap)) {
         if (key.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(key.toLowerCase())) {
@@ -343,11 +327,10 @@
         blueprint[name] = 'See job description sections for details.';
       }
     }
-    
     return blueprint;
   }
 
-  // ─── Parse AI response into 20 sections ───
+  // ─── Parse AI response ───
   function parseResumeData(rawText) {
     let text = rawText.replace(/\*\*/g, '').replace(/\* /g, '').trim();
     const sections = {};
@@ -419,7 +402,7 @@
     return sections;
   }
 
-  // ─── Build the AI prompt (with truncation) ───
+  // ─── Build prompt with truncation ───
   function buildPrompt(sections, maxLength = 4000) {
     const context = sections.map(s => `${s.name}: ${s.content}`).join('\n\n');
     let prompt = `
@@ -510,22 +493,20 @@ Job Description (selected sections):
 ${context}
 `;
     
-    // Truncate if needed
     if (prompt.length > maxLength) {
       prompt = prompt.slice(0, maxLength) + '\n... (truncated due to length)';
     }
-    
     return prompt;
   }
 
-  // ─── Main public function ───
+  // ─── Main function ───
   async function generateResume(url, options = {}) {
     const config = { ...DEFAULTS, ...options };
     const { description, aiEndpoint, timeout, maxPromptLength, maxRetries, skipAI } = config;
 
-    let html, desc, jobInfo;
-
     try {
+      let html, desc, jobInfo;
+
       if (description) {
         desc = description;
         jobInfo = { title: 'Pasted Job Description', company: 'Unknown' };
@@ -540,7 +521,7 @@ ${context}
 
       const wordCount = desc.split(/\s+/).filter(w => w.length > 0).length;
       if (wordCount < 15) {
-        throw new Error('Description too short (<15 words). Please provide a full job description.');
+        throw new Error('Description too short (<15 words).');
       }
 
       const sections = splitIntoSections(desc);
@@ -550,7 +531,6 @@ ${context}
       let aiResult = null;
       let aiError = null;
 
-      // Skip AI if requested, or try with fallback
       if (!skipAI) {
         try {
           const prompt = buildPrompt(sections, maxPromptLength);
@@ -563,7 +543,6 @@ ${context}
           blueprint = buildFallbackBlueprint(sections);
         }
       } else {
-        // Skip AI entirely – just use fallback
         blueprint = buildFallbackBlueprint(sections);
       }
 
@@ -583,8 +562,8 @@ ${context}
         globalTags,
         resumeBlueprint: blueprint,
         fullDescription: desc,
-        _rawAI: aiResult || null,
-        _aiError: aiError || null
+        _rawAI: aiResult,
+        _aiError: aiError
       };
 
       return result;
@@ -595,10 +574,10 @@ ${context}
     }
   }
 
-  // ─── Expose to global ───
+  // ─── Expose ───
   const JobScraper = {
     generateResume,
-    version: '1.0.2'
+    version: '1.0.3'
   };
 
   if (typeof module !== 'undefined' && module.exports) {
