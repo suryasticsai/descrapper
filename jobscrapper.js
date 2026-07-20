@@ -1,30 +1,46 @@
 /**
- * jobscrapper.js – v1.0.3
- * Lightweight library to scrape job descriptions and generate ATS resume blueprints.
+ * jobscrapper.js – v1.0.5
+ * 
+ * Scrapes job descriptions, splits into sections, and generates an ATS‑optimized resume blueprint.
+ * 
+ * Features:
+ * - Default proxy: Cloudflare Worker (fast, reliable, CORS‑bypass)
+ * - Fallback proxies: allorigins.win, corsproxy.io, codetabs.com
+ * - Smart section splitting (20+ categories)
+ * - AI‑powered blueprint (with fallback when AI fails)
+ * - Skip AI option for instant results
  * 
  * Usage:
  *   <script src="https://cdn.jsdelivr.net/gh/suryasticsai/descrapper@main/jobscrapper.js"></script>
  *   <script>
- *     JobScraper.generateResume('https://example.com/job-posting')
- *       .then(result => console.log(result.resumeBlueprint))
+ *     // Using default Cloudflare Worker (configured below)
+ *     JobScraper.generateResume('https://example.com/job-posting', { skipAI: true })
+ *       .then(data => console.log(data.resumeBlueprint))
  *       .catch(err => console.error(err));
  *   </script>
  * 
  * Options:
- *   - description: string (skip scraping and use this text instead)
- *   - aiEndpoint: string (override the default RAGina API endpoint)
- *   - timeout: number (milliseconds, default 60000)
- *   - skipAI: boolean (if true, skip AI call and return sections only)
+ *   - description: string       (skip scraping and use this text)
+ *   - aiEndpoint: string        (override AI endpoint)
+ *   - timeout: number           (ms, default 60000)
+ *   - maxPromptLength: number   (truncate prompt, default 4000)
+ *   - maxRetries: number        (retries for AI, default 2)
+ *   - skipAI: boolean           (skip AI call, default false)
+ *   - serverProxy: string       (override the Cloudflare Worker URL)
  */
 
 (function(global) {
   'use strict';
 
+  // ─── Default configuration ───
   const DEFAULTS = {
+    // --- Replace this with your actual Cloudflare Worker URL ---
+    serverProxy: 'https://saisurya.varakala.scrapper.workers.dev/fetch?url=',
     aiEndpoint: 'https://ragina-crawler-ragina.vercel.app/api/ask',
     timeout: 60000,
     maxPromptLength: 4000,
     maxRetries: 2,
+    skipAI: false,
   };
 
   // ─── Utility functions ───
@@ -210,13 +226,23 @@
     return { title, company };
   }
 
-  // ─── Fetch with CORS proxies ───
-  async function fetchHTML(url) {
-    const proxies = [
+  // ─── Fetch with Cloudflare Worker (primary) + fallback proxies ───
+  async function fetchHTML(url, serverProxy = null) {
+    const proxies = [];
+
+    // 1. Primary: Cloudflare Worker (or custom proxy)
+    if (serverProxy) {
+      proxies.push(serverProxy + encodeURIComponent(url));
+    }
+
+    // 2. Fallback client‑side proxies
+    const fallbackProxies = [
       `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
       `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
       `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
     ];
+    proxies.push(...fallbackProxies);
+
     for (const proxy of proxies) {
       try {
         const response = await fetch(proxy);
@@ -224,9 +250,11 @@
           const html = await response.text();
           if (html.length > 500) return html;
         }
-      } catch (e) { continue; }
+      } catch (e) {
+        console.warn('Proxy failed:', proxy, e.message);
+      }
     }
-    throw new Error('Could not fetch the page content.');
+    throw new Error('Could not fetch the page content. Please check the URL or paste the description manually.');
   }
 
   // ─── AI call with retry and detailed error logging ───
@@ -502,7 +530,7 @@ ${context}
   // ─── Main function ───
   async function generateResume(url, options = {}) {
     const config = { ...DEFAULTS, ...options };
-    const { description, aiEndpoint, timeout, maxPromptLength, maxRetries, skipAI } = config;
+    const { description, aiEndpoint, timeout, maxPromptLength, maxRetries, skipAI, serverProxy } = config;
 
     try {
       let html, desc, jobInfo;
@@ -511,7 +539,7 @@ ${context}
         desc = description;
         jobInfo = { title: 'Pasted Job Description', company: 'Unknown' };
       } else {
-        html = await fetchHTML(url);
+        html = await fetchHTML(url, serverProxy);
         if (html.toLowerCase().includes('this job is no longer available') || html.toLowerCase().includes('job has been closed')) {
           return { error: 'Job closed' };
         }
@@ -521,7 +549,7 @@ ${context}
 
       const wordCount = desc.split(/\s+/).filter(w => w.length > 0).length;
       if (wordCount < 15) {
-        throw new Error('Description too short (<15 words).');
+        throw new Error('Description too short (<15 words). Please provide a full job description.');
       }
 
       const sections = splitIntoSections(desc);
@@ -577,7 +605,7 @@ ${context}
   // ─── Expose ───
   const JobScraper = {
     generateResume,
-    version: '1.0.3'
+    version: '1.0.5'
   };
 
   if (typeof module !== 'undefined' && module.exports) {
