@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CurVina — Resume Content Generator</title>
+
+    <link rel="icon" type="image/png" href="curvina-logo.png" />
+    <link rel="apple-touch-icon" href="curvina-logo.png" />
+
+    <!-- External libraries -->
+    <script src="https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js">
+    </script>
+    <script src="https://unpkg.com/compromise@14.7.0/builds/compromise.min.js">
+    </script>
+
+    <!-- JobScraper library -->
+    <script src="https://cdn.jsdelivr.net/gh/suryasticsai/descrapper@main/jobscrapper.js">
+    </script>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- ═══ PROGRESS OVERLAY ═══ -->
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-card">
+            <div class="progress-icon"><i class="fas fa-cloud-download-alt"></i></div>
+            <h3>Fetching Job Description</h3>
+            <div class="progress-subtitle" id="progressSubtitle">Connecting to JobScraper...</div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-meta">
+                <span class="attempt" id="progressAttempt">Processing...</span>
+                <span class="proxy-name" id="progressProxy">JobScraper</span>
+            </div>
+            <div class="progress-cancel">
+                <button class="btn" id="progressCancelBtn"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="letterhead">
+            <div class="header">
+                <div class="crest">
+                    <img src="curvina-logo.png" alt="CurVina Logo" />
+                </div>
+                <div class="title-block">
+                    <h1>Cur<span>Vina</span></h1>
+                    <div class="sub"><i class="fas fa-water"></i> Resume Content Generator <i class="fas fa-water"></i></div>
+                </div>
+            </div>
+
+            <div class="input-row">
+                <input type="url" id="urlInput" placeholder="Paste a job posting URL (e.g. company careers page)" aria-label="Job posting URL" value="" />
+                <button class="btn" id="fetchBtn"><i class="fas fa-cloud-download-alt"></i> Fetch JD</button>
+                <div class="toggle-paste-row">
+                    <button class="btn btn-secondary" id="pasteJdBtn"><i class="fas fa-paste"></i> Paste JD Text</button>
+                </div>
+            </div>
+
+            <div class="input-row" id="pasteJdRow" style="display:none; flex-direction:column; align-items:stretch;">
+                <textarea id="pasteJdTextarea" placeholder="Paste the full job description text here, then click Use This JD"></textarea>
+                <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                    <button class="btn" id="usePastedJdBtn"><i class="fas fa-check"></i> Use This JD</button>
+                    <button class="btn btn-secondary" id="cancelPasteJdBtn"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+            </div>
+
+            <div class="jd-collapsible">
+                <div class="toggle-label" id="jdToggleLabel">
+                    <i class="fas fa-chevron-right arrow" id="jdArrow"></i>
+                    <span>Show Job Description</span>
+                </div>
+                <div class="jd-content" id="jdContent">
+                    <div id="jdContainer">
+                        <div style="color:#8a9aaa; font-style:italic; padding:20px 0; text-align:center;">No job description loaded yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fetch-fail-suggestion" id="fetchFailSuggestion">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Fetch failed. Try pasting the job description manually using the <strong>"Paste JD Text"</strong> button above.</span>
+                <button class="btn" onclick="document.getElementById('pasteJdBtn').click()">Paste JD Text</button>
+            </div>
+
+            <div class="input-row">
+                <div class="file-drop" id="resumeDrop">
+                    <i class="fas fa-file-upload" style="font-size:1.5rem; color:#c9a84c;"></i>
+                    <div>Click to upload your resume (PDF, DOCX, JPG, PNG, TXT)</div>
+                    <div class="file-name" id="resumeFileName">No file selected</div>
+                    <input type="file" id="resumeFileInput" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png" />
+                </div>
+            </div>
+
+            <div id="resumePreviewContainer" style="display:none; margin-top:16px;">
+                <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(0,0,0,0.04); padding-bottom:8px;">
+                    <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:#8a9aaa; font-weight:600;">
+                        <i class="fas fa-user-edit"></i> Your Resume (Editable)
+                    </span>
+                    <div style="display:flex; gap:6px; margin-left:auto; flex-wrap:wrap;">
+                        <button class="btn btn-fetch-info" id="fetchPersonalInfoBtn"><i class="fas fa-magic"></i> Fetch Personal Info</button>
+                        <button class="btn btn-save" id="saveResumeBtn"><i class="fas fa-save"></i> Save</button>
+                        <button class="btn btn-danger" id="clearResumeBtn"><i class="fas fa-trash-alt"></i> Clear</button>
+                        <button class="btn btn-secondary" id="toggleResumePreviewBtn" style="padding:4px 12px; font-size:0.7rem;">
+                            <i class="fas fa-eye"></i> Hide
+                        </button>
+                        <button class="btn btn-download-json" id="downloadJsonBtn"><i class="fas fa-file-code"></i> Download JSON</button>
+                    </div>
+                </div>
+                <div id="resumePreviewGrid" class="resume-preview-grid"></div>
+                <div class="form-actions" style="margin-top:12px; padding-top:8px; border-top:1px solid rgba(0,0,0,0.04);">
+                    <span style="font-size:0.7rem; color:#8a9aaa;"><i class="fas fa-info-circle"></i> All fields are editable. Click "Fetch Personal Info" to auto-fill from your resume.</span>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="btn btn-success" id="generateBtn" disabled>
+                    <i class="fas fa-wand-magic-sparkles"></i> Generate Content
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <i class="fas fa-trash-alt"></i> Clear All
+                </button>
+                <button class="btn btn-secondary" id="debugToggleBtn">
+                    <i class="fas fa-bug"></i> Show Debug
+                </button>
+            </div>
+
+            <div class="status-row">
+                <span class="status-badge" id="statusBadge">Ready</span>
+                <span class="status-text" id="statusText">Load a job, optionally upload a resume, then click Generate.</span>
+                <span class="retry-text" id="retryText"></span>
+            </div>
+
+            <div id="contentContainer" style="display:none;">
+                <div style="display:flex; align-items:center; gap:12px; margin-top:24px; border-bottom:1px solid rgba(0,0,0,0.04); padding-bottom:8px;">
+                    <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:#8a9aaa; font-weight:600;">
+                        <i class="fas fa-file-alt"></i> Curified Resume Sections
+                    </span>
+                    <span class="badge-mode" id="modeBadge">Resume + JD</span>
+                    <span style="margin-left:auto; display:flex; gap:8px;">
+                        <button class="btn btn-secondary" id="copyAllBtn"><i class="fas fa-copy"></i> Copy All</button>
+                        <button class="btn btn-success" id="downloadResumeBtn"><i class="fas fa-download"></i> Download HTML</button>
+                    </span>
+                </div>
+                <div id="sectionsContainer" class="section-grid"></div>
+            </div>
+
+            <div class="ats-preview-container" id="atsPreviewContainer">
+                <div class="ats-preview-header">
+                    <span><i class="fas fa-file-alt"></i> ATS-Friendly Resume Preview</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-ats" id="downloadAtsHtmlBtn"><i class="fas fa-download"></i> Download HTML</button>
+                        <button class="btn btn-ats-pdf" id="printAtsPdfBtn"><i class="fas fa-file-pdf"></i> Print / Save PDF</button>
+                        <button class="btn btn-secondary" id="toggleAtsPreviewBtn"><i class="fas fa-eye-slash"></i> Hide</button>
+                    </div>
+                </div>
+                <div class="ats-preview-frame" id="atsPreviewFrame">
+                    <iframe id="atsIframe" title="ATS Resume Preview"></iframe>
+                </div>
+            </div>
+
+            <div class="console-toggle">
+                <input type="checkbox" id="consoleToggle" />
+                <label for="consoleToggle">Show Console Log</label>
+            </div>
+
+            <div class="log-area hidden-log" id="logArea">
+                <div class="log-entry"><span class="time">[init]</span> <span class="level info">INFO</span> CurVina Content Generator ready.</div>
+            </div>
+
+            <div id="debugContainer" style="margin-top:16px;"></div>
+
+            <footer class="app-footer">
+                <a href="#" class="footer-brand" onclick="showPage('home')">
+                    <img src="curvina-logo.png" alt="CurVina Logo" style="width:28px; height:28px; object-fit:contain;" />
+                    CurVina
+                    <span style="font-weight:300; color:#8a9aaa; font-size:0.75rem;">— swim the ocean of opportunities</span>
+                </a>
+                <div class="footer-copy">
+                    &copy; 2026 CurVina &bull; Built with <i class="fas fa-heart" style="color:#ff6b6b;font-size:0.7rem;"></i> by suryasticsai
+                </div>
+                <div class="footer-links">
+                    <a href="#" onclick="showToast('info', '🐚 About CurVina', 'AI-powered resume tailor with RAGina.')">About</a>
+                    <a href="https://github.com/suryasticsai" target="_blank">GitHub</a>
+                    <a href="#" onclick="showToast('info', '🪸 Help', 'Upload a JD and your resume, then click Generate.')">Help</a>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
