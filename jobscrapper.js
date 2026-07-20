@@ -13,6 +13,7 @@
  *   - description: string (skip scraping and use this text instead)
  *   - aiEndpoint: string (override the default RAGina API endpoint)
  *   - timeout: number (milliseconds, default 60000)
+ *   - skipAI: boolean (if true, skip AI call and return sections only)
  * 
  * Returns a Promise resolving to an object:
  *   {
@@ -31,17 +32,12 @@
   // ─── Default configuration ───
   const DEFAULTS = {
     aiEndpoint: 'https://ragina-crawler-ragina.vercel.app/api/ask',
-    timeout: 30000, // 30 seconds
+    timeout: 60000, // 60 seconds
+    maxPromptLength: 4000, // truncate prompt to avoid API limits
+    maxRetries: 2,
   };
 
   // ─── Utility functions ───
-  function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
   function extractKeywords(text, limit = 12) {
     const words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || [];
     const stopwords = new Set([
@@ -243,50 +239,112 @@
     throw new Error('Could not fetch the page content.');
   }
 
-  // ─── AI call (RAGina) with improved error handling ───
-  async function callAI(prompt, endpoint, timeoutMs = 30000) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ prompt }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-
-      if (!response.ok) {
-        let errorText = `HTTP ${response.status}`;
-        try {
-          const text = await response.text();
-          errorText += `: ${text.substring(0, 150)}`;
-        } catch (e) { /* ignore */ }
-        throw new Error(errorText);
-      }
-
-      let data;
+  // ─── AI call (RAGina) with retry logic and timeout ───
+  async function callAI(prompt, endpoint, timeoutMs = 60000, maxRetries = 2) {
+    let lastError;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        data = await response.json();
-      } catch (e) {
-        throw new Error('Invalid JSON response from API');
-      }
-
-      // Try common response shapes
-      if (data && typeof data === 'object') {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ prompt }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          let errorText = `HTTP ${response.status}`;
+          try {
+            const text = await response.text();
+            errorText += `: ${text.substring(0, 150)}`;
+          } catch (e) { /* ignore */ }
+          throw new Error(errorText);
+        }
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          throw new Error('Invalid JSON response from API');
+        }
+        
+        // Try common response shapes
         return data.text || data.result || data.response || data;
+        
+      } catch (error) {
+        lastError = error;
+        // Don't retry on 4xx client errors (except 429 rate limit)
+        const msg = error.message || '';
+        if (msg.includes('400') || msg.includes('401') || msg.includes('403') || msg.includes('404')) {
+          throw error;
+        }
+        // Don't retry on abort (timeout) – we already timed out
+        if (error.name === 'AbortError') {
+          throw new Error(`Request timed out after ${timeoutMs/1000}s. The AI service may be busy.`);
+        }
+        if (attempt < maxRetries) {
+          console.warn(`AI call attempt ${attempt + 1} failed, retrying in ${2000 * (attempt + 1)}ms...`);
+          await new Promise(r => setTimeout(r, 2000 * (attempt + 1))); // exponential backoff
+        }
       }
-      throw new Error('Unexpected API response format');
-
-    } catch (error) {
-      clearTimeout(timeout);
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timed out after ${timeoutMs/1000}s. The AI service may be busy.`);
-      }
-      console.error('AI error details:', error);
-      throw new Error(`AI error: ${error.message}`);
     }
+    
+    throw lastError || new Error('AI call failed after retries');
+  }
+
+  // ─── Build a fallback blueprint when AI fails ───
+  function buildFallbackBlueprint(sections) {
+    const blueprint = {};
+    const sectionNames = [
+      'Professional Summary',
+      'Career Objective / Target Role',
+      'Core Skills',
+      'Technical Proficiency Matrix',
+      'Professional Experience',
+      'Key Projects',
+      'Primary Responsibilities',
+      'Required Qualifications',
+      'Preferred Qualifications',
+      'Education',
+      'Certifications',
+      'Languages',
+      'Leadership Experience',
+      'Professional Affiliations',
+      'Open Source / Volunteer Work',
+      'Honors & Awards',
+      'Publications / Patents',
+      'ATS Keywords',
+      'Resume Achievement Suggestions',
+      'Interview Focus Areas'
+    ];
+    
+    // Map extracted sections to blueprint fields
+    const sectionMap = {};
+    for (const s of sections) {
+      const cleanName = s.name.replace(/^[^\s]+\s/, '').trim();
+      sectionMap[cleanName] = s.content;
+    }
+    
+    for (const name of sectionNames) {
+      // Try to find a matching section
+      let found = false;
+      for (const [key, value] of Object.entries(sectionMap)) {
+        if (key.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(key.toLowerCase())) {
+          blueprint[name] = value;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        blueprint[name] = 'See job description sections for details.';
+      }
+    }
+    
+    return blueprint;
   }
 
   // ─── Parse AI response into 20 sections ───
@@ -361,10 +419,10 @@
     return sections;
   }
 
-  // ─── Build the AI prompt ───
-  function buildPrompt(sections) {
+  // ─── Build the AI prompt (with truncation) ───
+  function buildPrompt(sections, maxLength = 4000) {
     const context = sections.map(s => `${s.name}: ${s.content}`).join('\n\n');
-    return `
+    let prompt = `
 You are an expert ATS Resume Writer, Technical Recruiter, and Hiring Manager.
 
 Analyze the provided Job Description sections and generate an ATS-optimized resume blueprint tailored specifically for this role.
@@ -451,12 +509,19 @@ The response must be optimized for ATS systems such as Workday, Greenhouse, Leve
 Job Description (selected sections):
 ${context}
 `;
+    
+    // Truncate if needed
+    if (prompt.length > maxLength) {
+      prompt = prompt.slice(0, maxLength) + '\n... (truncated due to length)';
+    }
+    
+    return prompt;
   }
 
   // ─── Main public function ───
   async function generateResume(url, options = {}) {
     const config = { ...DEFAULTS, ...options };
-    const { description, aiEndpoint, timeout } = config;
+    const { description, aiEndpoint, timeout, maxPromptLength, maxRetries, skipAI } = config;
 
     let html, desc, jobInfo;
 
@@ -481,10 +546,26 @@ ${context}
       const sections = splitIntoSections(desc);
       const globalTags = extractGlobalTags(desc, 20);
 
-      const prompt = buildPrompt(sections);
-      let aiResult = await callAI(prompt, aiEndpoint, timeout);
-      aiResult = aiResult.replace(/\*\*/g, '').replace(/\* /g, '').trim();
-      const blueprint = parseResumeData(aiResult);
+      let blueprint = null;
+      let aiResult = null;
+      let aiError = null;
+
+      // Skip AI if requested, or try with fallback
+      if (!skipAI) {
+        try {
+          const prompt = buildPrompt(sections, maxPromptLength);
+          aiResult = await callAI(prompt, aiEndpoint, timeout, maxRetries);
+          aiResult = aiResult.replace(/\*\*/g, '').replace(/\* /g, '').trim();
+          blueprint = parseResumeData(aiResult);
+        } catch (error) {
+          aiError = error.message;
+          console.warn('AI failed, using fallback blueprint:', aiError);
+          blueprint = buildFallbackBlueprint(sections);
+        }
+      } else {
+        // Skip AI entirely – just use fallback
+        blueprint = buildFallbackBlueprint(sections);
+      }
 
       const result = {
         exportedAt: new Date().toISOString(),
@@ -502,7 +583,8 @@ ${context}
         globalTags,
         resumeBlueprint: blueprint,
         fullDescription: desc,
-        _rawAI: aiResult
+        _rawAI: aiResult || null,
+        _aiError: aiError || null
       };
 
       return result;
@@ -516,7 +598,7 @@ ${context}
   // ─── Expose to global ───
   const JobScraper = {
     generateResume,
-    version: '1.0.1' // bumped version
+    version: '1.0.2'
   };
 
   if (typeof module !== 'undefined' && module.exports) {
